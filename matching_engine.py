@@ -6,6 +6,7 @@ class MatchingEngine:
         self.order_book = order_book
         self.batch_interval = batch_interval
         self.last_batch_time = time.time()
+        self.last_clearing_price = None
 
     def run_batch_auction(self):
         current_time = time.time()
@@ -21,11 +22,9 @@ class MatchingEngine:
         # Find clearing price
         clearing_price = self.find_clearing_price(demand, supply)
 
-        if clearing_price is None:
-            return  # No trades possible
-
-        # Execute trades using pro-rata matching
-        self.execute_trades(clearing_price, demand, supply)
+        if clearing_price is not None:
+            # Execute trades using pro-rata matching
+            self.execute_trades(clearing_price, demand, supply)
 
     def find_clearing_price(self, demand, supply):
         all_prices = sorted(set(demand.keys()) | set(supply.keys()))
@@ -41,7 +40,10 @@ class MatchingEngine:
                 max_volume = volume
                 clearing_price = price
 
-        return clearing_price
+        if clearing_price is not None:
+            self.last_clearing_price = clearing_price
+
+        return self.last_clearing_price
 
     def execute_trades(self, clearing_price, demand, supply):
         executed_volume = min(

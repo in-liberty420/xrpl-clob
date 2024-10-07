@@ -21,18 +21,23 @@ class TestMatchingEngine:
         assert isinstance(matching_engine.order_book, OrderBook)
 
     def test_find_clearing_price(self, matching_engine):
-        matching_engine.order_book.add_order(create_order(100, 10, "buy", "1"))
-        matching_engine.order_book.add_order(create_order(99, 5, "buy", "2"))
-        matching_engine.order_book.add_order(create_order(101, 7, "sell", "3"))
-        matching_engine.order_book.add_order(create_order(102, 8, "sell", "4"))
-
+        # Test with no matching orders
+        matching_engine.order_book.add_order(create_order(98, 10, "buy", "1"))
+        matching_engine.order_book.add_order(create_order(102, 10, "sell", "2"))
         matching_engine.match_orders()
-        
-        # The clearing price should be 100 or 101
-        assert 100 <= matching_engine.find_clearing_price(
-            matching_engine.order_book.bids, 
-            matching_engine.order_book.asks
-        ) <= 101
+        assert matching_engine.last_clearing_price is None
+
+        # Test with matching orders
+        matching_engine.order_book.add_order(create_order(100, 10, "buy", "3"))
+        matching_engine.order_book.add_order(create_order(100, 10, "sell", "4"))
+        matching_engine.match_orders()
+        assert matching_engine.last_clearing_price == 100
+
+        # Test again with no matching orders
+        matching_engine.order_book.add_order(create_order(98, 10, "buy", "5"))
+        matching_engine.order_book.add_order(create_order(102, 10, "sell", "6"))
+        matching_engine.match_orders()
+        assert matching_engine.last_clearing_price == 100  # Should still be 100 from the last match
 
     def test_pro_rata_matching(self, matching_engine):
         matching_engine.order_book.add_order(create_order(100, 6, "buy", "1"))
