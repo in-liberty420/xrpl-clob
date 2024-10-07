@@ -32,16 +32,24 @@ class MatchingEngine:
     def find_clearing_price(self, demand, supply):
         all_prices = sorted(set(demand.keys()) | set(supply.keys()))
         max_volume = 0
+        min_imbalance = float('inf')
         clearing_price = None
 
         for price in all_prices:
             cumulative_demand = sum(sum(order.amount for order in demand[p]) for p in demand if p >= price)
             cumulative_supply = sum(sum(order.amount for order in supply[p]) for p in supply if p <= price)
             volume = min(cumulative_demand, cumulative_supply)
+            imbalance = abs(cumulative_demand - cumulative_supply)
 
-            if volume > max_volume:
+            if volume > max_volume or (volume == max_volume and imbalance < min_imbalance):
                 max_volume = volume
+                min_imbalance = imbalance
                 clearing_price = price
+            elif volume == max_volume and imbalance == min_imbalance:
+                # If still tied, choose price closest to last traded price
+                if self.last_clearing_price is not None:
+                    if abs(price - self.last_clearing_price) < abs(clearing_price - self.last_clearing_price):
+                        clearing_price = price
 
         if clearing_price is not None:
             self.last_clearing_price = clearing_price
