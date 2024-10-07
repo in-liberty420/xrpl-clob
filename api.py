@@ -31,10 +31,18 @@ class API:
                     signature=data['signature'],
                     expiration=data['expiration']
                 )
+                logger.debug(f"Created order object: {order.__dict__}")
                 
                 # Verify the signature
                 message = json.dumps({k: data[k] for k in ['price', 'amount', 'order_type', 'expiration']})
-                if verify_order_signature(order, message):
+                logger.debug(f"Message to verify: {message}")
+                logger.debug(f"Signature to verify: {order.signature}")
+                logger.debug(f"XRP address: {order.xrp_address}")
+                
+                verification_result = verify_order_signature(order, message)
+                logger.debug(f"Signature verification result: {verification_result}")
+                
+                if verification_result:
                     self.order_book.add_order(order)
                     self.matching_engine.run_batch_auction()
                     logger.info(f"Order placed successfully: {order.__dict__}")
@@ -43,7 +51,7 @@ class API:
                     logger.warning(f"Invalid order signature for order: {order.__dict__}")
                     return jsonify({"status": "error", "message": "Invalid order signature"}), 400
             except Exception as e:
-                logger.error(f"Error processing order: {str(e)}")
+                logger.error(f"Error processing order: {str(e)}", exc_info=True)
                 return jsonify({"status": "error", "message": str(e)}), 400
 
         @self.app.route('/order_book', methods=['GET'])
