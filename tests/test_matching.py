@@ -12,7 +12,7 @@ def matching_engine(order_book):
     return MatchingEngine(order_book, batch_interval=1)  # Use a shorter interval for testing
 
 def create_order(price, amount, order_type, order_id=None):
-    return Order(price, amount, order_type, f"address_{order_id}", f"pubkey_{order_id}", f"sig_{order_id}", order_id)
+    return Order(price, amount, order_type, f"address_{order_id}", f"pubkey_{order_id}", f"sig_{order_id}", int(time.time()) + 300)
 
 class TestMatchingEngine:
 
@@ -91,8 +91,9 @@ class TestMatchingEngine:
         assert 100 not in matching_engine.order_book.asks
 
     def test_order_expiration(self, matching_engine):
+        current_time = int(time.time())
         expired_order = create_order(100, 10, "buy", "1")
-        expired_order.expiration = time.time() - 1
+        expired_order.expiration = current_time - 1
         matching_engine.order_book.add_order(expired_order)
         matching_engine.order_book.add_order(create_order(100, 10, "sell", "2"))
 

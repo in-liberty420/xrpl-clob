@@ -9,7 +9,7 @@ class Order:
         self.xrp_address = xrp_address
         self.public_key = public_key
         self.signature = signature
-        self.expiration = expiration or (time.time() + 300)  # Default 5 minutes expiration
+        self.expiration = expiration if expiration is not None else int(time.time()) + 300  # Unix time, 5 minutes from now
 
 class OrderBook:
     def __init__(self):
@@ -36,7 +36,7 @@ class OrderBook:
         del self.order_map[order.signature]
 
     def get_order_book(self):
-        current_time = time.time()
+        current_time = int(time.time())
         return {
             "bids": [(price, sum(order.amount for order in orders if order.expiration > current_time))
                      for price, orders in sorted(self.bids.items(), reverse=True)],
@@ -45,7 +45,7 @@ class OrderBook:
         }
 
     def clean_expired_orders(self):
-        current_time = time.time()
+        current_time = int(time.time())
         for price, orders in list(self.bids.items()):
             self.bids[price] = [order for order in orders if order.expiration > current_time]
             if not self.bids[price]:

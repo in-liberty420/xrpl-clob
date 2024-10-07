@@ -5,11 +5,11 @@ class MatchingEngine:
     def __init__(self, order_book, batch_interval=5):  # 5 seconds batch interval
         self.order_book = order_book
         self.batch_interval = batch_interval
-        self.last_batch_time = time.time()
+        self.last_batch_time = int(time.time())
         self.last_clearing_price = None
 
     def run_batch_auction(self):
-        current_time = time.time()
+        current_time = int(time.time())
         if current_time - self.last_batch_time >= self.batch_interval:
             self.match_orders()
             self.last_batch_time = current_time

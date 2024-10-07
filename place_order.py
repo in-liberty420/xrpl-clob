@@ -22,7 +22,7 @@ def place_order():
         "price": 100.0,
         "amount": 10.0,
         "order_type": "buy",
-        "expiration": int(time.time() + 300)  # 5 minutes from now
+        "expiration": int(time.time()) + 300  # Unix time, 5 minutes from now
     }
     logger.debug(f"Order data: {order_data}")
     
