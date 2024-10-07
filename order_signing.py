@@ -10,7 +10,7 @@ def verify_order_signature(order, message):
     """Verify the signature of an order"""
     try:
         public_key = keypairs.derive_public_key(order.xrp_address)
-        return keypairs.is_valid_message(message.encode(), bytes.fromhex(order.signature), public_key)
+        return keypairs.is_valid_message(message.encode(), order.signature, public_key)
     except Exception as e:
         print(f"Error verifying signature: {str(e)}")
         return False

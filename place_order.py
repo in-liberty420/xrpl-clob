@@ -28,7 +28,7 @@ def place_order():
     payload = {
         **order_data,
         "xrp_address": wallet.classic_address,
-        "signature": signature.hex()
+        "signature": signature  # Remove .hex() as signature is already a string
     }
     
     headers = {"Content-Type": "application/json"}
