@@ -20,7 +20,7 @@ class API:
         @self.app.route('/place_order', methods=['POST'])
         def place_order():
             data = request.json
-            logger.debug(f"Received order data: {data}")
+            logger.debug(f"Received full order data: {data}")
             
             try:
                 order = Order(
