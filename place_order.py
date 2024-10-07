@@ -26,7 +26,7 @@ def place_order():
     
     payload = {
         **order_data,
-        "private_key": wallet.private_key.to_string().hex(),  # Only for testing!
+        "private_key": wallet.private_key,  # Only for testing!
         "signature": signature
     }
     
