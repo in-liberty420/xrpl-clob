@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify
 from order_book import Order
+from order_signing import sign_order, verify_order_signature
+from xrpl.wallet import Wallet
 import time
 
 class API:
@@ -15,11 +17,32 @@ class API:
         @self.app.route('/place_order', methods=['POST'])
         def place_order():
             data = request.json
-            expiration = data.get('expiration', time.time() + 300)  # Default 5 minutes expiration
-            order = Order(data['price'], data['amount'], data['order_type'], data['user_id'], expiration)
-            self.order_book.add_order(order)
-            self.matching_engine.run_batch_auction()  # Trigger a batch auction after each new order
-            return jsonify({"status": "success", "message": "Order placed successfully"})
+            wallet = Wallet(data['private_key'])  # In a real app, don't send private keys!
+            
+            order_data = {
+                'price': data['price'],
+                'amount': data['amount'],
+                'order_type': data['order_type'],
+                'expiration': data.get('expiration', time.time() + 300)
+            }
+            
+            signature = sign_order(order_data, wallet)
+            
+            order = Order(
+                price=order_data['price'],
+                amount=order_data['amount'],
+                order_type=order_data['order_type'],
+                xrp_address=wallet.classic_address,
+                signature=signature,
+                expiration=order_data['expiration']
+            )
+            
+            if verify_order_signature(order):
+                self.order_book.add_order(order)
+                self.matching_engine.run_batch_auction()
+                return jsonify({"status": "success", "message": "Order placed successfully"})
+            else:
+                return jsonify({"status": "error", "message": "Invalid order signature"}), 400
 
         @self.app.route('/order_book', methods=['GET'])
         def get_order_book():

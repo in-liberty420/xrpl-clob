@@ -1,20 +1,35 @@
 import requests
 import json
 import time
+from xrpl.wallet import generate_faucet_wallet
+from xrpl.clients import JsonRpcClient
+from order_signing import sign_order
 
 def place_order():
     url = "http://127.0.0.1:5000/place_order"
     
+    # Generate a test wallet (in a real app, you'd use a persistent wallet)
+    client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
+    wallet = generate_faucet_wallet(client)
+    
     # Current time plus 3 seconds
     expiration = time.time() + 3
     
-    payload = {
+    order_data = {
         "price": 100.0,
         "amount": 10.0,
         "order_type": "buy",
-        "user_id": "user123",
         "expiration": expiration
     }
+    
+    signature = sign_order(order_data, wallet)
+    
+    payload = {
+        **order_data,
+        "private_key": wallet.private_key.to_string().hex(),  # Only for testing!
+        "signature": signature
+    }
+    
     headers = {"Content-Type": "application/json"}
 
     response = requests.post(url, data=json.dumps(payload), headers=headers)
