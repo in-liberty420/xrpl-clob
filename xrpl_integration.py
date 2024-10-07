@@ -1,7 +1,7 @@
 from xrpl.clients import JsonRpcClient
 from xrpl.models.transactions import Payment
 from xrpl.wallet import generate_faucet_wallet
-from xrpl.transaction import safe_sign_and_submit_transaction
+from xrpl.transaction import submit_and_wait
 
 class XRPLIntegration:
     def __init__(self):
@@ -16,5 +16,6 @@ class XRPLIntegration:
             amount=str(amount),
             destination=destination_address,
         )
-        response = safe_sign_and_submit_transaction(payment, sender_wallet, self.client)
+        signed_tx = sender_wallet.sign(payment)
+        response = submit_and_wait(signed_tx, self.client)
         return response
