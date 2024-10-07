@@ -15,14 +15,8 @@ class MatchingEngine:
 
     def match_orders(self):
         # Aggregate demand and supply
-        demand = defaultdict(float)
-        supply = defaultdict(float)
-
-        for price, orders in self.order_book.bids.items():
-            demand[price] = sum(order.amount for order in orders)
-
-        for price, orders in self.order_book.asks.items():
-            supply[price] = sum(order.amount for order in orders)
+        demand = self.order_book.bids
+        supply = self.order_book.asks
 
         # Find clearing price
         clearing_price = self.find_clearing_price(demand, supply)
@@ -39,8 +33,8 @@ class MatchingEngine:
         clearing_price = None
 
         for price in all_prices:
-            cumulative_demand = sum(demand[p] for p in all_prices if p >= price)
-            cumulative_supply = sum(supply[p] for p in all_prices if p <= price)
+            cumulative_demand = sum(sum(order.amount for order in demand[p]) for p in demand if p >= price)
+            cumulative_supply = sum(sum(order.amount for order in supply[p]) for p in supply if p <= price)
             volume = min(cumulative_demand, cumulative_supply)
 
             if volume > max_volume:
@@ -51,17 +45,17 @@ class MatchingEngine:
 
     def execute_trades(self, clearing_price, demand, supply):
         executed_volume = min(
-            sum(demand[p] for p in demand if p >= clearing_price),
-            sum(supply[p] for p in supply if p <= clearing_price)
+            sum(sum(order.amount for order in demand[p]) for p in demand if p >= clearing_price),
+            sum(sum(order.amount for order in supply[p]) for p in supply if p <= clearing_price)
         )
 
         print(f"Batch auction executed: {executed_volume} @ {clearing_price}")
 
         # Pro-rata matching for bids
-        self.pro_rata_match(self.order_book.bids, clearing_price, executed_volume, lambda p: p >= clearing_price)
+        self.pro_rata_match(demand, clearing_price, executed_volume, lambda p: p >= clearing_price)
 
         # Pro-rata matching for asks
-        self.pro_rata_match(self.order_book.asks, clearing_price, executed_volume, lambda p: p <= clearing_price)
+        self.pro_rata_match(supply, clearing_price, executed_volume, lambda p: p <= clearing_price)
 
         # Remove fully filled orders and update partially filled orders
         self.clean_order_book()
@@ -82,25 +76,4 @@ class MatchingEngine:
             # Here you would typically record the trade or notify the user
 
     def clean_order_book(self):
-        current_time = time.time()
-
-        for price, orders in list(self.order_book.bids.items()):
-            self.order_book.bids[price] = [
-                order for order in orders
-                if order.amount > 0 and order.expiration > current_time
-            ]
-            if not self.order_book.bids[price]:
-                del self.order_book.bids[price]
-
-        for price, orders in list(self.order_book.asks.items()):
-            self.order_book.asks[price] = [
-                order for order in orders
-                if order.amount > 0 and order.expiration > current_time
-            ]
-            if not self.order_book.asks[price]:
-                del self.order_book.asks[price]
-
-        # Clean up the order_map
-        for order_id, order in list(self.order_book.order_map.items()):
-            if order.amount == 0 or order.expiration <= current_time:
-                del self.order_book.order_map[order_id]
+        self.order_book.clean_expired_orders()
