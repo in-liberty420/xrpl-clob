@@ -1,9 +1,12 @@
+import time
+
 class Order:
-    def __init__(self, price, amount, order_type, user_id):
+    def __init__(self, price, amount, order_type, user_id, expiration=None):
         self.price = price
         self.amount = amount
         self.order_type = order_type
         self.user_id = user_id
+        self.expiration = expiration or (time.time() + 300)  # Default 5 minutes expiration
 
 class OrderBook:
     def __init__(self):
@@ -25,7 +28,13 @@ class OrderBook:
             self.asks.remove(order)
 
     def get_order_book(self):
+        current_time = time.time()
         return {
-            "bids": [(order.price, order.amount) for order in self.bids],
-            "asks": [(order.price, order.amount) for order in self.asks]
+            "bids": [(order.price, order.amount) for order in self.bids if order.expiration > current_time],
+            "asks": [(order.price, order.amount) for order in self.asks if order.expiration > current_time]
         }
+
+    def clean_expired_orders(self):
+        current_time = time.time()
+        self.bids = [bid for bid in self.bids if bid.expiration > current_time]
+        self.asks = [ask for ask in self.asks if ask.expiration > current_time]

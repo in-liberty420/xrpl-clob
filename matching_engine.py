@@ -1,7 +1,8 @@
 import time
+from collections import defaultdict
 
 class MatchingEngine:
-    def __init__(self, order_book, batch_interval=60):  # 60 seconds batch interval
+    def __init__(self, order_book, batch_interval=5):  # 5 seconds batch interval
         self.order_book = order_book
         self.batch_interval = batch_interval
         self.last_batch_time = time.time()
@@ -13,27 +14,63 @@ class MatchingEngine:
             self.last_batch_time = current_time
 
     def match_orders(self):
-        while self.order_book.bids and self.order_book.asks:
-            best_bid = self.order_book.bids[0]
-            best_ask = self.order_book.asks[0]
+        # Aggregate demand and supply
+        demand = defaultdict(float)
+        supply = defaultdict(float)
 
-            if best_bid.price >= best_ask.price:
-                # Match found
-                trade_price = (best_bid.price + best_ask.price) / 2
-                trade_amount = min(best_bid.amount, best_ask.amount)
+        for bid in self.order_book.bids:
+            for price in range(int(bid.price * 100), 0, -1):
+                demand[price / 100] += bid.amount
 
-                # Execute trade (in a real system, you'd call XRPL here)
-                print(f"Trade executed: {trade_amount} @ {trade_price}")
+        for ask in self.order_book.asks:
+            for price in range(1, int(ask.price * 100) + 1):
+                supply[price / 100] += ask.amount
 
-                # Update orders
-                best_bid.amount -= trade_amount
-                best_ask.amount -= trade_amount
+        # Find clearing price
+        clearing_price = None
+        max_volume = 0
+        for price in sorted(set(demand.keys()) | set(supply.keys())):
+            volume = min(demand[price], supply[price])
+            if volume > max_volume:
+                max_volume = volume
+                clearing_price = price
 
-                # Remove filled orders
-                if best_bid.amount == 0:
-                    self.order_book.remove_order(best_bid)
-                if best_ask.amount == 0:
-                    self.order_book.remove_order(best_ask)
-            else:
-                # No more matches possible
-                break
+        if clearing_price is None:
+            return  # No trades possible
+
+        # Execute trades
+        executed_volume = min(demand[clearing_price], supply[clearing_price])
+        print(f"Batch auction executed: {executed_volume} @ {clearing_price}")
+
+        # Update order book
+        self.update_order_book(clearing_price, executed_volume)
+
+    def update_order_book(self, clearing_price, executed_volume):
+        remaining_volume = executed_volume
+
+        # Process bids
+        for bid in self.order_book.bids[:]:
+            if bid.price >= clearing_price:
+                if bid.amount <= remaining_volume:
+                    remaining_volume -= bid.amount
+                    self.order_book.remove_order(bid)
+                else:
+                    bid.amount -= remaining_volume
+                    break
+
+        remaining_volume = executed_volume
+
+        # Process asks
+        for ask in self.order_book.asks[:]:
+            if ask.price <= clearing_price:
+                if ask.amount <= remaining_volume:
+                    remaining_volume -= ask.amount
+                    self.order_book.remove_order(ask)
+                else:
+                    ask.amount -= remaining_volume
+                    break
+
+        # Remove expired orders
+        current_time = time.time()
+        self.order_book.bids = [bid for bid in self.order_book.bids if bid.expiration > current_time]
+        self.order_book.asks = [ask for ask in self.order_book.asks if ask.expiration > current_time]
