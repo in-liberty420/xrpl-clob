@@ -59,8 +59,22 @@ class MatchingEngine:
         # Pro-rata matching for asks
         self.pro_rata_match(supply, clearing_price, executed_volume, lambda p: p <= clearing_price)
 
-        # Remove fully filled orders and update partially filled orders
+        # Remove fully filled orders
+        self.remove_filled_orders()
+
+        # Clean expired orders
         self.clean_order_book()
+
+    def remove_filled_orders(self):
+        for price in list(self.order_book.bids.keys()):
+            self.order_book.bids[price] = [order for order in self.order_book.bids[price] if order.amount > 0]
+            if not self.order_book.bids[price]:
+                del self.order_book.bids[price]
+        
+        for price in list(self.order_book.asks.keys()):
+            self.order_book.asks[price] = [order for order in self.order_book.asks[price] if order.amount > 0]
+            if not self.order_book.asks[price]:
+                del self.order_book.asks[price]
 
     def pro_rata_match(self, orders, clearing_price, executed_volume, price_condition):
         eligible_orders = [
@@ -72,9 +86,12 @@ class MatchingEngine:
         total_eligible_volume = sum(order.amount for order in eligible_orders)
 
         for order in eligible_orders:
-            fill_ratio = min(1, executed_volume / total_eligible_volume)
-            filled_amount = order.amount * fill_ratio
-            order.amount -= filled_amount
+            if total_eligible_volume > 0:
+                fill_ratio = min(1, executed_volume / total_eligible_volume)
+                filled_amount = order.amount * fill_ratio
+                order.amount -= filled_amount
+                executed_volume -= filled_amount
+                total_eligible_volume -= order.amount
             # Here you would typically record the trade or notify the user
 
     def clean_order_book(self):
