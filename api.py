@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from order_book import Order, OrderBook
-from xrpl.core.keypairs import verify
+from order_signing import verify_order_signature
 import json
 import logging
 
@@ -34,7 +34,7 @@ class API:
                 
                 # Verify the signature
                 message = json.dumps({k: data[k] for k in ['price', 'amount', 'order_type', 'expiration']})
-                if verify(message.encode(), bytes.fromhex(data['signature']), data['xrp_address']):
+                if verify_order_signature(order, message):
                     self.order_book.add_order(order)
                     self.matching_engine.run_batch_auction()
                     logger.info(f"Order placed successfully: {order.__dict__}")

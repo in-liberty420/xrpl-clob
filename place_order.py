@@ -3,7 +3,7 @@ import json
 import time
 from xrpl.wallet import generate_faucet_wallet
 from xrpl.clients import JsonRpcClient
-from xrpl.core.keypairs import sign
+from xrpl.core import keypairs
 
 def place_order():
     url = "http://127.0.0.1:5000/place_order"
@@ -22,7 +22,7 @@ def place_order():
     
     # Sign the order
     message = json.dumps(order_data)
-    signature = sign(message.encode(), wallet.private_key)
+    signature = keypairs.sign(message.encode(), wallet.private_key)
     
     # Prepare payload
     payload = {
