@@ -18,16 +18,12 @@ def verify_order_signature(order, message):
         logger.debug(f"Signature to verify: {order.signature}")
         logger.debug(f"XRP address: {order.xrp_address}")
         
-        # Decode the classic address to get the public key hash
-        public_key_hash = decode_classic_address(order.xrp_address)
-        logger.debug(f"Decoded public key hash: {public_key_hash.hex()}")
-        
         # Convert the signature from hex to bytes
         signature_bytes = bytes.fromhex(order.signature)
         logger.debug(f"Signature bytes: {signature_bytes}")
         
         # Verify the signature
-        result = keypairs.verify(message.encode(), signature_bytes, public_key_hash)
+        result = keypairs.is_valid_message(message.encode(), signature_bytes, order.xrp_address)
         logger.debug(f"Signature verification result: {result}")
         return result
     except Exception as e:
