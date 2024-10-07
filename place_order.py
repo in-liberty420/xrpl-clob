@@ -33,7 +33,15 @@ def place_order():
     headers = {"Content-Type": "application/json"}
 
     response = requests.post(url, data=json.dumps(payload), headers=headers)
-    print(response.json())
+    
+    print(f"Status Code: {response.status_code}")
+    print(f"Response Headers: {response.headers}")
+    print(f"Response Content: {response.text}")
+    
+    try:
+        print(f"JSON Response: {response.json()}")
+    except json.JSONDecodeError:
+        print("Failed to decode JSON response")
 
     # Wait for 4 seconds to see the order expire
     time.sleep(4)
@@ -42,7 +50,14 @@ def place_order():
     order_book_url = "http://127.0.0.1:5000/order_book"
     order_book_response = requests.get(order_book_url)
     print("Order book after expiration:")
-    print(json.dumps(order_book_response.json(), indent=2))
+    print(f"Status Code: {order_book_response.status_code}")
+    print(f"Response Headers: {order_book_response.headers}")
+    print(f"Response Content: {order_book_response.text}")
+    
+    try:
+        print(json.dumps(order_book_response.json(), indent=2))
+    except json.JSONDecodeError:
+        print("Failed to decode JSON response for order book")
 
 if __name__ == "__main__":
     place_order()
