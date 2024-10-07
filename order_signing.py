@@ -18,7 +18,10 @@ def verify_order_signature(order, message):
         logger.debug(f"Signature to verify: {order.signature}")
         logger.debug(f"Public key: {order.public_key}")
         
-        result = keypairs.is_valid_message(message.encode(), order.signature, order.public_key)
+        # Convert the signature from hex string to bytes
+        signature_bytes = bytes.fromhex(order.signature)
+        
+        result = keypairs.is_valid_message(message.encode(), signature_bytes, order.public_key)
         logger.debug(f"Signature verification result: {result}")
         return result
     except Exception as e:
