@@ -3,35 +3,37 @@ import json
 import time
 from xrpl.wallet import generate_faucet_wallet
 from xrpl.clients import JsonRpcClient
-from order_signing import sign_order
+from xrpl.core.keypairs import sign
 
 def place_order():
     url = "http://127.0.0.1:5000/place_order"
     
-    # Generate a test wallet (in a real app, you'd use a persistent wallet)
+    # Generate a test wallet
     client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
     wallet = generate_faucet_wallet(client)
     
-    # Current time plus 3 seconds
-    expiration = time.time() + 3
-    
+    # Create order data
     order_data = {
         "price": 100.0,
         "amount": 10.0,
         "order_type": "buy",
-        "expiration": expiration
+        "expiration": int(time.time() + 300)  # 5 minutes from now
     }
     
-    signature = sign_order(order_data, wallet)
+    # Sign the order
+    message = json.dumps(order_data)
+    signature = sign(message.encode(), wallet.private_key)
     
+    # Prepare payload
     payload = {
         **order_data,
         "xrp_address": wallet.classic_address,
-        "signature": signature
+        "signature": signature.hex()
     }
     
     headers = {"Content-Type": "application/json"}
 
+    # Send request
     response = requests.post(url, data=json.dumps(payload), headers=headers)
     
     print(f"Status Code: {response.status_code}")
@@ -43,21 +45,12 @@ def place_order():
     except json.JSONDecodeError:
         print("Failed to decode JSON response")
 
-    # Wait for 4 seconds to see the order expire
-    time.sleep(4)
-
-    # Check the order book after expiration
+    # Check the order book
     order_book_url = "http://127.0.0.1:5000/order_book"
     order_book_response = requests.get(order_book_url)
-    print("Order book after expiration:")
+    print("\nOrder book:")
     print(f"Status Code: {order_book_response.status_code}")
-    print(f"Response Headers: {order_book_response.headers}")
     print(f"Response Content: {order_book_response.text}")
-    
-    try:
-        print(json.dumps(order_book_response.json(), indent=2))
-    except json.JSONDecodeError:
-        print("Failed to decode JSON response for order book")
 
 if __name__ == "__main__":
     place_order()
