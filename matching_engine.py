@@ -15,6 +15,9 @@ class MatchingEngine:
             self.last_batch_time = current_time
 
     def match_orders(self):
+        # Clean expired orders before matching
+        self.clean_order_book()
+
         # Aggregate demand and supply
         demand = self.order_book.bids
         supply = self.order_book.asks
@@ -95,4 +98,16 @@ class MatchingEngine:
             # Here you would typically record the trade or notify the user
 
     def clean_order_book(self):
-        self.order_book.clean_expired_orders()
+        current_time = int(time.time())
+        for price in list(self.order_book.bids.keys()):
+            self.order_book.bids[price] = [order for order in self.order_book.bids[price] if order.expiration > current_time]
+            if not self.order_book.bids[price]:
+                del self.order_book.bids[price]
+        
+        for price in list(self.order_book.asks.keys()):
+            self.order_book.asks[price] = [order for order in self.order_book.asks[price] if order.expiration > current_time]
+            if not self.order_book.asks[price]:
+                del self.order_book.asks[price]
+        
+        # Clean up the order_map
+        self.order_book.order_map = {sig: order for sig, order in self.order_book.order_map.items() if order.expiration > current_time}
