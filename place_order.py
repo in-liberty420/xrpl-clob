@@ -30,13 +30,15 @@ def place_order():
     message = json.dumps(order_data)
     signature = keypairs.sign(message.encode(), wallet.private_key)
     logger.debug(f"Message to sign: {message}")
-    logger.debug(f"Signature: {signature}")  # Remove .hex() as signature is already a string
+    logger.debug(f"Signature: {signature}")
+    logger.debug(f"Public key: {wallet.public_key}")
 
     # Prepare payload
     payload = {
         **order_data,
         "xrp_address": wallet.classic_address,
-        "signature": signature  # Send as is, it's already a string
+        "public_key": wallet.public_key,
+        "signature": signature
     }
     logger.debug(f"Payload: {payload}")
     

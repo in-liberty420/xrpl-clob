@@ -16,18 +16,9 @@ def verify_order_signature(order, message):
         logger.debug(f"Verifying signature for order: {order.__dict__}")
         logger.debug(f"Message to verify: {message}")
         logger.debug(f"Signature to verify: {order.signature}")
-        logger.debug(f"XRP address: {order.xrp_address}")
+        logger.debug(f"Public key: {order.public_key}")
         
-        # Convert the signature from hex to bytes
-        signature_bytes = bytes.fromhex(order.signature)
-        logger.debug(f"Signature bytes: {signature_bytes}")
-        
-        # Derive public key from XRP address
-        public_key = keypairs.derive_public_key(order.xrp_address)
-        logger.debug(f"Derived public key: {public_key}")
-        
-        # Verify the signature
-        result = keypairs.is_valid_message(message.encode(), signature_bytes, public_key)
+        result = keypairs.is_valid_message(message.encode(), order.signature, order.public_key)
         logger.debug(f"Signature verification result: {result}")
         return result
     except Exception as e:

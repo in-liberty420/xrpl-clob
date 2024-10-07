@@ -28,6 +28,7 @@ class API:
                     amount=data['amount'],
                     order_type=data['order_type'],
                     xrp_address=data['xrp_address'],
+                    public_key=data['public_key'],
                     signature=data['signature'],
                     expiration=data['expiration']
                 )

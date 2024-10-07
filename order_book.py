@@ -1,11 +1,12 @@
 import time
 
 class Order:
-    def __init__(self, price, amount, order_type, xrp_address, signature, expiration=None):
+    def __init__(self, price, amount, order_type, xrp_address, public_key, signature, expiration=None):
         self.price = price
         self.amount = amount
         self.order_type = order_type
         self.xrp_address = xrp_address
+        self.public_key = public_key
         self.signature = signature
         self.expiration = expiration or (time.time() + 300)  # Default 5 minutes expiration
 
