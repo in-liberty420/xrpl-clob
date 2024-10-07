@@ -17,7 +17,6 @@ class API:
         @self.app.route('/place_order', methods=['POST'])
         def place_order():
             data = request.json
-            wallet = Wallet(data['private_key'])  # In a real app, don't send private keys!
             
             order_data = {
                 'price': data['price'],
@@ -26,14 +25,12 @@ class API:
                 'expiration': data.get('expiration', time.time() + 300)
             }
             
-            signature = sign_order(order_data, wallet)
-            
             order = Order(
                 price=order_data['price'],
                 amount=order_data['amount'],
                 order_type=order_data['order_type'],
-                xrp_address=wallet.classic_address,
-                signature=signature,
+                xrp_address=data['xrp_address'],
+                signature=data['signature'],
                 expiration=order_data['expiration']
             )
             
