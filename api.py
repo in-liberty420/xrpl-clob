@@ -37,7 +37,7 @@ class API:
 
                 order = Order(
                     price=data['price'],
-                    amount=data['amount'],
+                    amount=data['amount_drops'],  # Use amount_drops here
                     order_type=data['order_type'],
                     xrp_address=data['xrp_address'],
                     public_key=data['public_key'],

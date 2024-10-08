@@ -29,14 +29,14 @@ class XRPLIntegration:
         response = self.client.request(request)
         return response.result['account_data']['Sequence']
 
-    def verify_payment_signature(self, payment_tx_signature, xrp_address, multisig_destination, amount):
+    def verify_payment_signature(self, payment_tx_signature, xrp_address, multisig_destination, amount_drops):
         if payment_tx_signature is None:
             return False
         
         # Recreate the payment transaction
         payment = Payment(
             account=xrp_address,
-            amount=str(amount),
+            amount=amount_drops,
             destination=multisig_destination
         )
         

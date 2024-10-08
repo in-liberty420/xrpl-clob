@@ -8,6 +8,7 @@ from xrpl.models import AccountInfo, Payment
 from xrpl.transaction import sign
 from xrpl.account import get_next_valid_seq_number
 from xrpl.ledger import get_fee
+import xrpl.utils
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -59,10 +60,13 @@ def place_order():
     sequence = get_next_valid_seq_number(wallet.classic_address, client)
     fee = get_fee(client)
 
+    # Convert the amount to drops
+    amount_drops = xrpl.utils.xrp_to_drops(order_data['amount'])
+
     # Create and sign the payment transaction
     payment = Payment(
         account=wallet.classic_address,
-        amount=str(order_data['amount']),
+        amount=amount_drops,
         destination=multisig_destination,
         sequence=sequence,
         fee=fee
@@ -79,7 +83,8 @@ def place_order():
         "xrp_address": wallet.classic_address,
         "public_key": wallet.public_key,
         "signature": signature,
-        "payment_tx_signature": payment_tx_signature
+        "payment_tx_signature": payment_tx_signature,
+        "amount_drops": amount_drops
     }
     logger.debug(f"Payload: {payload}")
     
