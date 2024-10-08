@@ -2,6 +2,7 @@ from xrpl.wallet import Wallet
 from xrpl.clients import JsonRpcClient
 from xrpl.models.transactions import Payment
 from xrpl.transaction import safe_sign_and_submit_transaction
+import xrpl.account
 import os
 from cryptography.fernet import Fernet
 
