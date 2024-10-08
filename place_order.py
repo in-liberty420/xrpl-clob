@@ -55,20 +55,18 @@ def place_order():
     logger.debug(f"Signature: {signature}")
     logger.debug(f"Public key: {wallet.public_key}")
 
+    # Get the next valid sequence number and current fee
+    sequence = get_next_valid_seq_number(wallet.classic_address, client)
+    fee = get_fee(client)
+
     # Create and sign the payment transaction
     payment = Payment(
         account=wallet.classic_address,
         amount=str(order_data['amount']),
-        destination=multisig_destination
+        destination=multisig_destination,
+        sequence=sequence,
+        fee=fee
     )
-    
-    # Get the next valid sequence number and current fee
-    sequence = get_next_valid_seq_number(wallet.classic_address, client)
-    fee = get_fee(client)
-    
-    # Set the sequence and fee
-    payment.sequence = sequence
-    payment.fee = fee
     
     # Sign the transaction
     signed_payment = sign(payment, wallet)
