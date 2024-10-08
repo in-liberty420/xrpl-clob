@@ -49,7 +49,11 @@ def test_payment_signature():
 
     # Sign the payment
     signed_payment = sign(payment, wallet)
-    
+
+    # Log the type of txn_signature
+    print(f"Type of signed_payment.txn_signature: {type(signed_payment.txn_signature)}")
+    print(f"Value of signed_payment.txn_signature: {signed_payment.txn_signature}")
+
     # Create the transaction JSON expected by verify_payment_signature
     tx_json = {
         "Account": wallet.classic_address,
@@ -58,7 +62,7 @@ def test_payment_signature():
         "TransactionType": "Payment",
         "Sequence": 1,
         "SigningPubKey": wallet.public_key,
-        "TxnSignature": signed_payment.txn_signature.hex()
+        "TxnSignature": signed_payment.txn_signature  # Remove .hex()
     }
 
     print(f"Wallet address: {wallet.classic_address}")
