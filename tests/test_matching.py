@@ -46,11 +46,15 @@ class TestMatchingEngine:
 
         matching_engine.match_orders()
 
-        # Check that orders were filled proportionally
-        assert len(matching_engine.order_book.bids[100]) == 2
-        assert matching_engine.order_book.bids[100][0].amount == 1  # 6 - (6 * 10/15)
-        assert matching_engine.order_book.bids[100][1].amount == 0.6666666666666667  # 4 - (4 * 10/15)
-        assert matching_engine.order_book.asks[100][0].amount == 5  # 15 - 10
+        # Check that buy orders were fully filled and removed
+        assert 100 not in matching_engine.order_book.bids
+        
+        # Check that sell order was partially filled
+        assert len(matching_engine.order_book.asks[100]) == 1
+        assert matching_engine.order_book.asks[100][0].amount == 5  # 15 - (6 + 4)
+
+        # Verify the clearing price
+        assert matching_engine.last_clearing_price == 100
 
     def test_partial_fill(self, matching_engine):
         matching_engine.order_book.add_order(create_order(100, 10, "buy", "1"))
