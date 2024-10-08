@@ -4,6 +4,7 @@ from unittest.mock import Mock
 from matching_engine import MatchingEngine
 from order_book import OrderBook, Order
 from xrpl_integration import XRPLIntegration
+from multisig import MultisigWallet
 
 @pytest.fixture
 def order_book():
@@ -16,8 +17,12 @@ def mock_xrpl_integration():
     return mock
 
 @pytest.fixture
-def matching_engine(order_book, mock_xrpl_integration):
-    return MatchingEngine(order_book, mock_xrpl_integration, batch_interval=1)  # Use a shorter interval for testing
+def mock_multisig_wallet():
+    return Mock(spec=MultisigWallet)
+
+@pytest.fixture
+def matching_engine(order_book, mock_xrpl_integration, mock_multisig_wallet):
+    return MatchingEngine(order_book, mock_xrpl_integration, mock_multisig_wallet, batch_interval=1)  # Use a shorter interval for testing
 
 def create_order(price, amount, order_type, order_id=None, sequence=None):
     return Order(price, amount, order_type, f"address_{order_id}", f"pubkey_{order_id}", f"sig_{order_id}", int(time.time()) + 300, sequence=sequence)
