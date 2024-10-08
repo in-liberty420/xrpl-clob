@@ -42,9 +42,12 @@ async def main():
         signing_json = {k: v for k, v in signed_tx_json.items() if k not in ["TxnSignature", "hash"]}
         signing_data = encode_for_signing(signing_json)
 
+        # Convert the hex string to bytes
+        signing_data_bytes = bytes.fromhex(signing_data)
+
         # Now verify the signature
         is_valid = keypairs.is_valid_message(
-            message=signing_data,  # signing_data is already bytes from encode_for_signing
+            message=signing_data_bytes,
             signature=bytes.fromhex(signature),
             public_key=wallet.public_key
         )
