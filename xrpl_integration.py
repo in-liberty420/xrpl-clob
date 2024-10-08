@@ -44,31 +44,40 @@ class XRPLIntegration:
             "Amount": str(amount_drops),
             "Destination": multisig_destination,
             "TransactionType": "Payment",
-            "Sequence": sequence
+            "Sequence": sequence,
+            "SigningPubKey": public_key,
+            "TxnSignature": payment_tx_signature
         }
         
-        # Encode the transaction data
-        encoded_tx = encode_for_signing(tx_json)
-        
         try:
-            # Ensure the signature is a valid hex string
-            if not all(c in '0123456789ABCDEFabcdef' for c in payment_tx_signature):
-                raise ValueError("Invalid hex string")
-            
-            # Convert the hex string back to bytes
-            signature_bytes = bytes.fromhex(payment_tx_signature)
-            
-            logger.debug(f"Encoded transaction: {encoded_tx.hex()}")
-            logger.debug(f"Signature bytes: {signature_bytes.hex()}")
-            logger.debug(f"Public key: {public_key}")
-            
-            # Verify the signature
-            is_valid = keypairs.is_valid_message(encoded_tx, signature_bytes, public_key)
+            # Step 1: Prepare the Transaction JSON
+            tx_json_unsigned = copy.deepcopy(tx_json)
+            tx_json_unsigned.pop('TxnSignature', None)
+            tx_json_unsigned.pop('Signers', None)
+
+            # Step 2: Serialize the Transaction
+            serialized_txn = encode_for_signing(tx_json_unsigned)
+
+            # Step 3: Retrieve the Signature and Public Key
+            txn_signature_hex = tx_json.get('TxnSignature')
+            signing_pub_key_hex = tx_json.get('SigningPubKey')
+
+            if txn_signature_hex is None or signing_pub_key_hex is None:
+                logger.error("Missing TxnSignature or SigningPubKey")
+                return False
+
+            # Step 4: Verify the Signature
+            is_valid = keypairs.verify(
+                message=serialized_txn,
+                signature=txn_signature_hex,
+                public_key=signing_pub_key_hex
+            )
+
             logger.debug(f"Signature verification result: {is_valid}")
             return is_valid
-        except ValueError as e:
-            logger.error(f"Invalid payment signature format: {e}")
-            logger.error(f"Problematic signature: {payment_tx_signature}")
+
+        except Exception as e:
+            logger.error(f"Error verifying payment signature: {e}")
             return False
 
     def create_payment_transaction(self, source, destination, amount):
