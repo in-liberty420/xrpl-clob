@@ -1,3 +1,4 @@
+import os
 from order_book import OrderBook
 from matching_engine import MatchingEngine
 from api import API
