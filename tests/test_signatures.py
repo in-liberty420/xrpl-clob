@@ -48,7 +48,7 @@ def test_payment_signature():
 
     # Sign the payment
     signed_payment = sign(payment, wallet)
-    payment_tx_signature = signed_payment.get_hash().hex()
+    payment_tx_signature = signed_payment.get_hash()
 
     print(f"Wallet address: {wallet.classic_address}")
     print(f"Wallet public key: {wallet.public_key}")
