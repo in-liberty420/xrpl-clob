@@ -54,11 +54,11 @@ class XRPLIntegration:
 
             # Step 2: Serialize the Transaction
             serialized_txn = encode_for_signing(tx_json)
-            logger.debug(f"Serialized transaction: {serialized_txn}")
+            logger.debug(f"Serialized transaction: {serialized_txn.hex()}")
 
             # Step 3: Verify the Signature
             is_valid = keypairs.is_valid_message(
-                message=serialized_txn,
+                message=serialized_txn,  # Use serialized_txn directly, it's already bytes
                 signature=bytes.fromhex(payment_tx_signature),
                 public_key=public_key
             )
