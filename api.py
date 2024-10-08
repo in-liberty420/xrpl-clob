@@ -41,8 +41,7 @@ class API:
                     expiration=data['expiration'],
                     sequence=data['sequence'],
                     payment_tx_signature=data.get('payment_tx_signature'),
-                    multisig_destination=data.get('multisig_destination'),
-                    additional_info_signature=data.get('additional_info_signature')
+                    multisig_destination=data.get('multisig_destination')
                 )
                 logger.debug(f"Created order object: {order.__dict__}")
         
@@ -61,11 +60,6 @@ class API:
                         logger.warning(f"Invalid payment transaction signature for order: {order.__dict__}")
                         return jsonify({"status": "error", "message": "Invalid payment transaction signature"}), 400
 
-                    # Verify additional info signature if provided
-                    if order.additional_info_signature:
-                        if not self.xrpl_integration.verify_additional_info_signature(order.additional_info_signature, order.xrp_address, message):
-                            logger.warning(f"Invalid additional info signature for order: {order.__dict__}")
-                            return jsonify({"status": "error", "message": "Invalid additional info signature"}), 400
 
                     # Store the order in a pending orders list, sorted by sequence number
                     self.pending_orders.setdefault(data['xrp_address'], []).append(order)
