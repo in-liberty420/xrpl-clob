@@ -19,8 +19,8 @@ def mock_xrpl_integration():
 def matching_engine(order_book, mock_xrpl_integration):
     return MatchingEngine(order_book, mock_xrpl_integration, batch_interval=1)  # Use a shorter interval for testing
 
-def create_order(price, amount, order_type, order_id=None):
-    return Order(price, amount, order_type, f"address_{order_id}", f"pubkey_{order_id}", f"sig_{order_id}", int(time.time()) + 300)
+def create_order(price, amount, order_type, order_id=None, sequence=None):
+    return Order(price, amount, order_type, f"address_{order_id}", f"pubkey_{order_id}", f"sig_{order_id}", int(time.time()) + 300, sequence=sequence)
 
 class TestMatchingEngine:
 
@@ -30,27 +30,27 @@ class TestMatchingEngine:
 
     def test_find_clearing_price(self, matching_engine):
         # Test with no matching orders
-        matching_engine.order_book.add_order(create_order(98, 10, "buy", "1"))
-        matching_engine.order_book.add_order(create_order(102, 10, "sell", "2"))
+        matching_engine.order_book.add_order(create_order(98, 10, "buy", "1", sequence=1))
+        matching_engine.order_book.add_order(create_order(102, 10, "sell", "2", sequence=2))
         matching_engine.match_orders()
         assert matching_engine.last_clearing_price is None
 
         # Test with matching orders
-        matching_engine.order_book.add_order(create_order(100, 10, "buy", "3"))
-        matching_engine.order_book.add_order(create_order(100, 10, "sell", "4"))
+        matching_engine.order_book.add_order(create_order(100, 10, "buy", "3", sequence=3))
+        matching_engine.order_book.add_order(create_order(100, 10, "sell", "4", sequence=4))
         matching_engine.match_orders()
         assert matching_engine.last_clearing_price == 100
 
         # Test again with no matching orders
-        matching_engine.order_book.add_order(create_order(98, 10, "buy", "5"))
-        matching_engine.order_book.add_order(create_order(102, 10, "sell", "6"))
+        matching_engine.order_book.add_order(create_order(98, 10, "buy", "5", sequence=5))
+        matching_engine.order_book.add_order(create_order(102, 10, "sell", "6", sequence=6))
         matching_engine.match_orders()
         assert matching_engine.last_clearing_price == 100  # Should still be 100 from the last match
 
     def test_pro_rata_matching(self, matching_engine):
-        matching_engine.order_book.add_order(create_order(100, 6, "buy", "1"))
-        matching_engine.order_book.add_order(create_order(100, 4, "buy", "2"))
-        matching_engine.order_book.add_order(create_order(100, 15, "sell", "3"))
+        matching_engine.order_book.add_order(create_order(100, 6, "buy", "1", sequence=1))
+        matching_engine.order_book.add_order(create_order(100, 4, "buy", "2", sequence=2))
+        matching_engine.order_book.add_order(create_order(100, 15, "sell", "3", sequence=3))
 
         matching_engine.match_orders()
 
@@ -65,8 +65,8 @@ class TestMatchingEngine:
         assert matching_engine.last_clearing_price == 100
 
     def test_partial_fill(self, matching_engine):
-        matching_engine.order_book.add_order(create_order(100, 10, "buy", "1"))
-        matching_engine.order_book.add_order(create_order(100, 7, "sell", "2"))
+        matching_engine.order_book.add_order(create_order(100, 10, "buy", "1", sequence=1))
+        matching_engine.order_book.add_order(create_order(100, 7, "sell", "2", sequence=2))
 
         matching_engine.match_orders()
 
@@ -75,9 +75,9 @@ class TestMatchingEngine:
         assert 100 not in matching_engine.order_book.asks
 
     def test_multiple_price_levels(self, matching_engine):
-        matching_engine.order_book.add_order(create_order(101, 5, "buy", "1"))
-        matching_engine.order_book.add_order(create_order(100, 5, "buy", "2"))
-        matching_engine.order_book.add_order(create_order(99, 10, "sell", "3"))
+        matching_engine.order_book.add_order(create_order(101, 5, "buy", "1", sequence=1))
+        matching_engine.order_book.add_order(create_order(100, 5, "buy", "2", sequence=2))
+        matching_engine.order_book.add_order(create_order(99, 10, "sell", "3", sequence=3))
     
         matching_engine.match_orders()
     
@@ -88,8 +88,8 @@ class TestMatchingEngine:
         assert len(matching_engine.order_book.asks) == 0
 
     def test_no_match(self, matching_engine):
-        matching_engine.order_book.add_order(create_order(98, 10, "buy", "1"))
-        matching_engine.order_book.add_order(create_order(102, 10, "sell", "2"))
+        matching_engine.order_book.add_order(create_order(98, 10, "buy", "1", sequence=1))
+        matching_engine.order_book.add_order(create_order(102, 10, "sell", "2", sequence=2))
 
         matching_engine.match_orders()
 
@@ -97,8 +97,8 @@ class TestMatchingEngine:
         assert len(matching_engine.order_book.asks[102]) == 1
 
     def test_exact_match(self, matching_engine):
-        matching_engine.order_book.add_order(create_order(100, 10, "buy", "1"))
-        matching_engine.order_book.add_order(create_order(100, 10, "sell", "2"))
+        matching_engine.order_book.add_order(create_order(100, 10, "buy", "1", sequence=1))
+        matching_engine.order_book.add_order(create_order(100, 10, "sell", "2", sequence=2))
 
         matching_engine.match_orders()
 
@@ -107,10 +107,10 @@ class TestMatchingEngine:
 
     def test_order_expiration(self, matching_engine):
         current_time = int(time.time())
-        expired_order = create_order(100, 10, "buy", "1")
+        expired_order = create_order(100, 10, "buy", "1", sequence=1)
         expired_order.expiration = current_time - 1
         matching_engine.order_book.add_order(expired_order)
-        matching_engine.order_book.add_order(create_order(100, 10, "sell", "2"))
+        matching_engine.order_book.add_order(create_order(100, 10, "sell", "2", sequence=2))
 
         matching_engine.match_orders()
 
@@ -119,8 +119,8 @@ class TestMatchingEngine:
 
     def test_large_order_book(self, matching_engine):
         for i in range(1000):
-            matching_engine.order_book.add_order(create_order(100 + i * 0.01, 1, "buy", f"buy_{i}"))
-            matching_engine.order_book.add_order(create_order(110 - i * 0.01, 1, "sell", f"sell_{i}"))
+            matching_engine.order_book.add_order(create_order(100 + i * 0.01, 1, "buy", f"buy_{i}", sequence=i+1))
+            matching_engine.order_book.add_order(create_order(110 - i * 0.01, 1, "sell", f"sell_{i}", sequence=i+1001))
 
         matching_engine.match_orders()
 
