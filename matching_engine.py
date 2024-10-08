@@ -1,13 +1,15 @@
 import time
 from collections import defaultdict
+from settlement import Settlement
 
 class MatchingEngine:
-    def __init__(self, order_book, xrpl_integration, batch_interval=5):  # 5 seconds batch interval
+    def __init__(self, order_book, xrpl_integration, multisig_wallet, batch_interval=5):  # 5 seconds batch interval
         self.order_book = order_book
         self.xrpl_integration = xrpl_integration
         self.batch_interval = batch_interval
         self.last_batch_time = int(time.time())
         self.last_clearing_price = None
+        self.settlement = Settlement(xrpl_integration, multisig_wallet)
 
     def run_batch_auction(self):
         current_time = int(time.time())
@@ -68,18 +70,14 @@ class MatchingEngine:
         # Pro-rata matching for asks
         matched_orders.extend(self.pro_rata_match(supply, clearing_price, max_volume, total_supply, lambda p: p <= clearing_price))
 
-        for order in matched_orders:
-            current_sequence = self.xrpl_integration.get_account_sequence(order.xrp_address)
-            if order.sequence >= current_sequence:
-                # The order is still valid, we can proceed with the trade
-                # TODO: Implement XRPL transaction submission
-                pass
-            else:
-                # Remove the order as it's no longer valid
-                self.order_book.remove_order(order)
-
-        # Remove fully filled orders
-        self.remove_filled_orders()
+        # Process settlement
+        if self.settlement.process_matched_orders(matched_orders):
+            # Remove fully filled orders
+            self.remove_filled_orders()
+        else:
+            # If settlement failed, we need to invalidate this auction
+            print("Settlement failed. Invalidating this auction.")
+            # You might want to implement some recovery logic here
 
         # Clean expired orders
         self.clean_order_book()
