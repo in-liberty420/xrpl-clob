@@ -14,21 +14,18 @@ class MultisigWallet:
 
     def load_key(self):
         try:
-            with open("encryption_key.key", "rb") as key_file:
-                return key_file.read()
+            with open("encrypted_wallet.key", "rb") as file:
+                encrypted_data = file.read()
+                # Assuming the key is the first 44 bytes of the encrypted data
+                return encrypted_data[:44]
         except FileNotFoundError:
             return None
 
     def create_wallet(self):
         self.wallet = Wallet.create()
         self.key = Fernet.generate_key()
-        self.save_key()
         self.encrypt_and_store_keys()
         return self.wallet.classic_address
-
-    def save_key(self):
-        with open("encryption_key.key", "wb") as key_file:
-            key_file.write(self.key)
 
     def encrypt_and_store_keys(self):
         if not self.wallet:
@@ -38,7 +35,7 @@ class MultisigWallet:
         encrypted_seed = f.encrypt(self.wallet.seed.encode())
         
         with open("encrypted_wallet.key", "wb") as file:
-            file.write(encrypted_seed)
+            file.write(self.key + encrypted_seed)
 
     def load_wallet(self):
         if not os.path.exists("encrypted_wallet.key"):
@@ -48,7 +45,9 @@ class MultisigWallet:
             raise ValueError("Encryption key not found. Please create a wallet first.")
         
         with open("encrypted_wallet.key", "rb") as file:
-            encrypted_seed = file.read()
+            encrypted_data = file.read()
+        
+        encrypted_seed = encrypted_data[44:]  # The seed data starts after the key
         
         f = Fernet(self.key)
         decrypted_seed = f.decrypt(encrypted_seed).decode()
