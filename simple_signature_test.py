@@ -44,7 +44,7 @@ async def main():
 
         # Now verify the signature
         is_valid = keypairs.is_valid_message(
-            message=signing_data,
+            message=signing_data,  # signing_data is already bytes, no need to encode
             signature=bytes.fromhex(signature),
             public_key=wallet.public_key
         )
