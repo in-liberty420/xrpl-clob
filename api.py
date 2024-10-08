@@ -22,7 +22,7 @@ class API:
         def place_order():
             data = request.json
             logger.debug(f"Received full order data: {data}")
-    
+
             try:
                 # Get the current sequence number
                 current_sequence = self.xrpl_integration.get_account_sequence(data['xrp_address'])
@@ -37,63 +37,39 @@ class API:
 
                 order = Order(
                     price=data['price'],
-                    amount=data['amount_drops'],  # Use amount_drops here
+                    amount=data['amount_drops'],
                     order_type=data['order_type'],
                     xrp_address=data['xrp_address'],
                     public_key=data['public_key'],
-                    signature=data['signature'],
                     expiration=data['expiration'],
                     sequence=data['sequence'],
-                    payment_tx_signature=data.get('payment_tx_signature'),
+                    payment_tx_signature=data['payment_tx_signature'],
                     multisig_destination=data['multisig_destination'],
                     last_ledger_sequence=data.get('last_ledger_sequence')
                 )
                 logger.debug(f"Created order object: {order.__dict__}")
-        
-                # Verify the signature
-                message_data = {
-                    'price': data['price'],
-                    'amount': data['amount'],
-                    'order_type': data['order_type'],
-                    'expiration': data['expiration'],
-                    'sequence': data['sequence'],
-                    'multisig_destination': data['multisig_destination']
-                }
-                if 'last_ledger_sequence' in data:
-                    message_data['last_ledger_sequence'] = data['last_ledger_sequence']
-        
-                message = json.dumps(message_data)
-                logger.debug(f"Message to verify: {message}")
-                logger.debug(f"Signature to verify: {order.signature}")
-                logger.debug(f"XRP address: {order.xrp_address}")
-        
-                verification_result = verify_order_signature(order, message)
-                logger.debug(f"Signature verification result: {verification_result}")
-        
-                if verification_result:
-                    # Verify payment transaction signature
-                    payment_signature_valid = self.xrpl_integration.verify_payment_signature(
-                        order.payment_tx_signature,
-                        order.xrp_address,
-                        order.multisig_destination,
-                        order.amount,
-                        order.sequence
-                    )
-                    logger.debug(f"Payment signature verification result: {payment_signature_valid}")
 
-                    if not payment_signature_valid:
-                        logger.warning(f"Invalid payment transaction signature for order: {order.__dict__}")
-                        return jsonify({"status": "error", "message": "Invalid payment transaction signature"}), 400
+                # Verify payment transaction signature
+                payment_signature_valid = self.xrpl_integration.verify_payment_signature(
+                    order.payment_tx_signature,
+                    order.public_key,
+                    order.multisig_destination,
+                    order.amount,
+                    order.sequence
+                )
+                logger.debug(f"Payment signature verification result: {payment_signature_valid}")
 
-                    # Store the order in a pending orders list, sorted by sequence number
-                    self.pending_orders.setdefault(data['xrp_address'], []).append(order)
-                    self.pending_orders[data['xrp_address']].sort(key=lambda x: x.sequence)
-    
-                    logger.info(f"Order placed in pending queue: {order.__dict__}")
-                    return jsonify({"status": "success", "message": "Order placed in pending queue"})
-                else:
-                    logger.warning(f"Invalid order signature for order: {order.__dict__}")
-                    return jsonify({"status": "error", "message": "Invalid order signature"}), 400
+                if not payment_signature_valid:
+                    logger.warning(f"Invalid payment transaction signature for order: {order.__dict__}")
+                    return jsonify({"status": "error", "message": "Invalid payment transaction signature"}), 400
+
+                # Store the order in a pending orders list, sorted by sequence number
+                self.pending_orders.setdefault(data['xrp_address'], []).append(order)
+                self.pending_orders[data['xrp_address']].sort(key=lambda x: x.sequence)
+
+                logger.info(f"Order placed in pending queue: {order.__dict__}")
+                return jsonify({"status": "success", "message": "Order placed in pending queue"})
+
             except Exception as e:
                 logger.error(f"Error processing order: {str(e)}", exc_info=True)
                 return jsonify({"status": "error", "message": str(e)}), 400
