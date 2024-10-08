@@ -46,8 +46,15 @@ class XRPLIntegration:
         # Encode the transaction data
         encoded_tx = encode_for_signing(tx_json)
         
-        # Verify the signature
-        return keypairs.is_valid_message(encoded_tx, bytes.fromhex(payment_tx_signature), xrp_address)
+        try:
+            # Ensure the signature is in the correct format
+            signature_bytes = bytes.fromhex(payment_tx_signature)
+            
+            # Verify the signature
+            return keypairs.is_valid_message(encoded_tx, signature_bytes, xrp_address)
+        except ValueError as e:
+            logger.error(f"Invalid payment signature format: {e}")
+            return False
 
     def create_payment_transaction(self, source, destination, amount):
         return Payment(

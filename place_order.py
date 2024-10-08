@@ -74,7 +74,7 @@ def place_order():
     
     # Sign the transaction
     signed_payment = sign(payment, wallet)
-    payment_tx_signature = signed_payment.get_hash()
+    payment_tx_signature = signed_payment.get_hash().hex()  # Convert to hexadecimal string
     logger.debug(f"Payment transaction signature: {payment_tx_signature}")
 
     # Prepare payload
