@@ -22,6 +22,8 @@ class MultisigWallet:
             return None
 
     def create_wallet(self):
+        if os.path.exists("encrypted_wallet.key"):
+            raise ValueError("Wallet already exists. Use load_wallet() instead.")
         self.wallet = Wallet.create()
         self.key = Fernet.generate_key()
         self.encrypt_and_store_keys()
