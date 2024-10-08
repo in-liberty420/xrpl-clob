@@ -2,10 +2,8 @@ from xrpl.clients import JsonRpcClient
 from xrpl.models.transactions import Payment
 from xrpl.models import AccountInfo
 from xrpl.wallet import generate_faucet_wallet
-from xrpl.transaction import submit_and_wait
-
-from xrpl.models import Payment
-from xrpl.transaction import submit_and_wait
+from xrpl.transaction import submit_and_wait, safe_sign_and_autofill_transaction
+from xrpl.core import keypairs
 
 class XRPLIntegration:
     def __init__(self):
@@ -30,10 +28,25 @@ class XRPLIntegration:
         return response.result['account_data']['Sequence']
 
     def verify_payment_signature(self, payment_tx_signature, xrp_address, multisig_destination, amount):
-        # Implement the logic to verify the payment transaction signature
-        # This will depend on how you're constructing and signing the payment transaction
-        # Return True if the signature is valid, False otherwise
-        pass
+        if payment_tx_signature is None:
+            return False
+        
+        # Recreate the payment transaction
+        payment = Payment(
+            account=xrp_address,
+            amount=str(amount),
+            destination=multisig_destination
+        )
+        
+        # Get the account info to fill in the sequence and fee
+        account_info = self.client.request(AccountInfo(account=xrp_address))
+        sequence = account_info.result['account_data']['Sequence']
+        
+        # Autofill the transaction
+        filled_tx = safe_sign_and_autofill_transaction(payment, self.client, xrp_address)
+        
+        # Verify the signature
+        return keypairs.is_valid_message(filled_tx.to_xrpl(), bytes.fromhex(payment_tx_signature), xrp_address)
 
     def create_payment_transaction(self, source, destination, amount):
         return Payment(

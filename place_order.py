@@ -4,7 +4,8 @@ import time
 from xrpl.wallet import Wallet
 from xrpl.clients import JsonRpcClient
 from xrpl.core import keypairs
-from xrpl.models import AccountInfo
+from xrpl.models import AccountInfo, Payment
+from xrpl.transaction import safe_sign_and_autofill_transaction
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -52,12 +53,23 @@ def place_order():
     logger.debug(f"Signature: {signature}")
     logger.debug(f"Public key: {wallet.public_key}")
 
+    # Create and sign the payment transaction
+    payment = Payment(
+        account=wallet.classic_address,
+        amount=str(order_data['amount']),
+        destination=multisig_destination
+    )
+    signed_payment = safe_sign_and_autofill_transaction(payment, client, wallet)
+    payment_tx_signature = signed_payment.get_hash()
+    logger.debug(f"Payment transaction signature: {payment_tx_signature}")
+
     # Prepare payload
     payload = {
         **order_data,
         "xrp_address": wallet.classic_address,
         "public_key": wallet.public_key,
-        "signature": signature
+        "signature": signature,
+        "payment_tx_signature": payment_tx_signature
     }
     logger.debug(f"Payload: {payload}")
     
