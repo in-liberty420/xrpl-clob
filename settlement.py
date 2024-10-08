@@ -15,12 +15,16 @@ class Settlement:
         return True
 
     def execute_order(self, order):
+        # Note: For partial fills, we execute the full pre-signed transaction.
+        # The remaining unfilled portion stays on the order book for future matching.
+        # We do not refund excess amounts for partial fills.
+
         # Execute the full pre-signed transaction
         if not self.submit_transaction(order.payment_tx_signature, f"Full payment for {order.order_type} order"):
             return False
 
-        # Calculate the amount to pay out
-        payout_amount = order.amount * order.price if order.order_type == "sell" else order.amount
+        # Calculate the amount to pay out based on the matched amount
+        payout_amount = order.matched_amount * order.price if order.order_type == "sell" else order.matched_amount
 
         # Create and submit the payout transaction
         payout_tx = self.xrpl_integration.create_payment_transaction(
