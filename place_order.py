@@ -73,7 +73,17 @@ async def place_order():
     
     # Sign the transaction
     signed_payment = await autofill_and_sign(payment, client, wallet)
-    payment_tx_signature = signed_payment.get_hash()
+
+    # Extract the relevant parts of the signed transaction
+    tx_blob = signed_payment.to_xrpl()
+    signature = tx_blob["TxnSignature"]
+    signed_tx_json = signed_payment.to_xrpl()
+
+    # Remove fields that are not part of the signed data
+    signing_json = {k: v for k, v in signed_tx_json.items() if k not in ["TxnSignature", "hash"]}
+    signing_data = encode_for_signing(signing_json)
+
+    payment_tx_signature = signature
 
     logger.debug(f"Payment transaction signature: {payment_tx_signature}")
     logger.debug(f"Signed payment methods: {dir(signed_payment)}")
