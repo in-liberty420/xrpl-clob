@@ -58,9 +58,13 @@ class XRPLIntegration:
             # Convert the hex string back to bytes
             signature_bytes = bytes.fromhex(payment_tx_signature)
             
-            logger.debug(f"Encoded transaction: {encoded_tx}")  # Removed .hex()
+            logger.debug(f"Encoded transaction: {encoded_tx}")
             logger.debug(f"Signature bytes: {signature_bytes.hex()}")
             logger.debug(f"Public key: {public_key}")
+            
+            # Ensure encoded_tx is bytes
+            if isinstance(encoded_tx, str):
+                encoded_tx = encoded_tx.encode('utf-8')
             
             # Verify the signature
             is_valid = keypairs.is_valid_message(encoded_tx, signature_bytes, public_key)
