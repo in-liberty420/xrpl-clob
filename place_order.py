@@ -1,4 +1,4 @@
-import requests
+import httpx
 import json
 import time
 from xrpl.wallet import Wallet
@@ -54,8 +54,9 @@ def place_order():
     
     headers = {"Content-Type": "application/json"}
 
-    # Send request
-    response = requests.post(url, data=json.dumps(payload), headers=headers)
+    # Send request using httpx
+    with httpx.Client() as client:
+        response = client.post(url, json=payload, headers=headers)
     
     logger.debug(f"Status Code: {response.status_code}")
     logger.debug(f"Response Headers: {response.headers}")
@@ -68,7 +69,8 @@ def place_order():
 
     # Check the L2 order book
     l2_order_book_url = "http://127.0.0.1:5000/l2_order_book"
-    l2_order_book_response = requests.get(l2_order_book_url)
+    with httpx.Client() as client:
+        l2_order_book_response = client.get(l2_order_book_url)
     logger.debug("\nL2 Order book:")
     logger.debug(f"Status Code: {l2_order_book_response.status_code}")
     logger.debug(f"Response Content: {l2_order_book_response.text}")
