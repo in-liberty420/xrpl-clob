@@ -72,13 +72,16 @@ class API:
         
                 if verification_result:
                     # Verify payment transaction signature
-                    if not self.xrpl_integration.verify_payment_signature(
+                    payment_signature_valid = self.xrpl_integration.verify_payment_signature(
                         order.payment_tx_signature,
                         order.xrp_address,
                         order.multisig_destination,
                         order.amount,
                         order.sequence
-                    ):
+                    )
+                    logger.debug(f"Payment signature verification result: {payment_signature_valid}")
+
+                    if not payment_signature_valid:
                         logger.warning(f"Invalid payment transaction signature for order: {order.__dict__}")
                         return jsonify({"status": "error", "message": "Invalid payment transaction signature"}), 400
 

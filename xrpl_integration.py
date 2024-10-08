@@ -40,7 +40,7 @@ class XRPLIntegration:
         # Prepare the transaction data for signing
         tx_json = {
             "Account": xrp_address,
-            "Amount": amount_drops,
+            "Amount": str(amount_drops),  # Convert to string
             "Destination": multisig_destination,
             "TransactionType": "Payment",
             "Sequence": sequence
@@ -56,7 +56,9 @@ class XRPLIntegration:
             logger.debug(f"Payment signature after fromhex: {signature_bytes.hex()}")
             
             # Verify the signature
-            return keypairs.is_valid_message(encoded_tx, signature_bytes, xrp_address)
+            is_valid = keypairs.is_valid_message(encoded_tx, signature_bytes, xrp_address)
+            logger.debug(f"Signature verification result: {is_valid}")
+            return is_valid
         except ValueError as e:
             logger.error(f"Invalid payment signature format: {e}")
             logger.error(f"Problematic signature: {payment_tx_signature}")
