@@ -52,13 +52,8 @@ async def place_order():
     }
     logger.debug(f"Order data: {order_data}")
     
-    # Sign the order using encode_for_signing
-    signing_data = encode_for_signing(order_data)
-    signing_data_bytes = bytes.fromhex(signing_data)
-    signature = keypairs.sign(signing_data_bytes, wallet.private_key)
-    logger.debug(f"Message to sign: {signing_data}")
-    logger.debug(f"Signature: {signature}")
-    logger.debug(f"Public key: {wallet.public_key}")
+    # TODO: Implement order data signing later for additional security
+    # For now, we'll only sign the payment transaction
 
     # Get the next valid sequence number and current fee
     sequence = await get_next_valid_seq_number(wallet.classic_address, client)
@@ -87,10 +82,10 @@ async def place_order():
         **order_data,
         "xrp_address": wallet.classic_address,
         "public_key": wallet.public_key,
-        "signature": signature.hex(),
         "payment_tx_signature": payment_tx_signature,
         "amount_drops": amount_drops
     }
+    # TODO: Add order data signature to payload when implemented
     logger.debug(f"Payload: {payload}")
     
     headers = {"Content-Type": "application/json"}
