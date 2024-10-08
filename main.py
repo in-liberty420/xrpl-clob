@@ -5,8 +5,8 @@ from xrpl_integration import XRPLIntegration
 
 def main():
     order_book = OrderBook()
-    matching_engine = MatchingEngine(order_book)
     xrpl_integration = XRPLIntegration()
+    matching_engine = MatchingEngine(order_book, xrpl_integration)
     api = API(order_book, matching_engine, xrpl_integration)
     
     # Start the API server
