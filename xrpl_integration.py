@@ -6,7 +6,7 @@ from xrpl.transaction import submit_and_wait
 from xrpl.core import keypairs
 from xrpl.account import get_next_valid_seq_number
 from xrpl.ledger import get_fee
-from xrpl.core.binarycodec import encode_for_signing_claim
+from xrpl.core.binarycodec import encode_for_signing
 
 class XRPLIntegration:
     def __init__(self):
@@ -44,7 +44,7 @@ class XRPLIntegration:
         }
         
         # Encode the transaction data
-        encoded_tx = encode_for_signing_claim(tx_json)
+        encoded_tx = encode_for_signing(tx_json)
         
         # Verify the signature
         return keypairs.is_valid_message(encoded_tx, bytes.fromhex(payment_tx_signature), xrp_address)
