@@ -7,8 +7,8 @@ from xrpl.asyncio.clients import AsyncJsonRpcClient
 from xrpl.core import keypairs
 from xrpl.models import AccountInfo, Payment
 from xrpl.asyncio.transaction import autofill_and_sign
-from xrpl.account import get_next_valid_seq_number
-from xrpl.ledger import get_fee
+from xrpl.asyncio.account import get_next_valid_seq_number
+from xrpl.asyncio.ledger import get_fee
 import xrpl.utils
 from xrpl.core.binarycodec import encode_for_signing
 import logging
