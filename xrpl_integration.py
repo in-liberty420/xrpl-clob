@@ -50,7 +50,7 @@ class XRPLIntegration:
         encoded_tx = encode_for_signing(tx_json)
         
         try:
-            # The signature is already in hex format, so we just need to convert it to bytes
+            # Convert the hex string back to bytes
             signature_bytes = bytes.fromhex(payment_tx_signature)
             
             # Verify the signature
