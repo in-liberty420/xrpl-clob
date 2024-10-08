@@ -5,7 +5,7 @@ from xrpl.clients import JsonRpcClient
 from xrpl.models.transactions import Payment
 from xrpl.models import AccountInfo
 from xrpl.wallet import generate_faucet_wallet
-from xrpl.transaction import submit_and_wait
+from xrpl.transaction import submit_and_wait, autofill_and_sign
 from xrpl.core import keypairs
 from xrpl.account import get_next_valid_seq_number
 from xrpl.ledger import get_fee
@@ -26,7 +26,7 @@ class XRPLIntegration:
             amount=str(amount),
             destination=destination_address,
         )
-        signed_tx = sender_wallet.sign(payment)
+        signed_tx = autofill_and_sign(payment, sender_wallet, self.client)
         response = submit_and_wait(signed_tx, self.client)
         return response
 
@@ -70,12 +70,13 @@ class XRPLIntegration:
             logger.error(f"Error verifying payment signature: {str(e)}", exc_info=True)
             return False
 
-    def create_payment_transaction(self, source, destination, amount):
-        return Payment(
-            account=source,
+    def create_payment_transaction(self, wallet, destination, amount):
+        payment = Payment(
+            account=wallet.classic_address,
             destination=destination,
             amount=str(amount)
         )
+        return autofill_and_sign(payment, wallet, self.client)
 
     def submit_transaction(self, signed_transaction):
         if hasattr(signed_transaction, 'last_ledger_sequence') and signed_transaction.last_ledger_sequence is not None:
