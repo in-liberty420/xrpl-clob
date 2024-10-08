@@ -51,12 +51,15 @@ class XRPLIntegration:
         
         try:
             # Ensure the signature is in the correct format
+            logger.debug(f"Payment signature before fromhex: {payment_tx_signature}")
             signature_bytes = bytes.fromhex(payment_tx_signature)
+            logger.debug(f"Payment signature after fromhex: {signature_bytes.hex()}")
             
             # Verify the signature
             return keypairs.is_valid_message(encoded_tx, signature_bytes, xrp_address)
         except ValueError as e:
             logger.error(f"Invalid payment signature format: {e}")
+            logger.error(f"Problematic signature: {payment_tx_signature}")
             return False
 
     def create_payment_transaction(self, source, destination, amount):
