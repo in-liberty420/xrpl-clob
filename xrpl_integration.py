@@ -6,6 +6,7 @@ from xrpl.transaction import submit_and_wait
 from xrpl.core import keypairs
 from xrpl.account import get_next_valid_seq_number
 from xrpl.ledger import get_fee
+from xrpl.core.binarycodec import encode_for_signing_claim
 
 class XRPLIntegration:
     def __init__(self):
@@ -29,30 +30,24 @@ class XRPLIntegration:
         response = self.client.request(request)
         return response.result['account_data']['Sequence']
 
-    def verify_payment_signature(self, payment_tx_signature, xrp_address, multisig_destination, amount_drops):
+    def verify_payment_signature(self, payment_tx_signature, xrp_address, multisig_destination, amount_drops, sequence):
         if payment_tx_signature is None:
             return False
         
-        # Recreate the payment transaction
-        payment = Payment(
-            account=xrp_address,
-            amount=amount_drops,
-            destination=multisig_destination
-        )
+        # Prepare the transaction data for signing
+        tx_json = {
+            "Account": xrp_address,
+            "Amount": amount_drops,
+            "Destination": multisig_destination,
+            "TransactionType": "Payment",
+            "Sequence": sequence
+        }
         
-        # Get the next valid sequence number and the current fee
-        sequence = get_next_valid_seq_number(xrp_address, self.client)
-        fee = get_fee(self.client)
-        
-        # Manually fill in the transaction fields
-        payment.sequence = sequence
-        payment.fee = fee
-        
-        # Convert the transaction to its canonical form
-        tx_blob = payment.to_xrpl()
+        # Encode the transaction data
+        encoded_tx = encode_for_signing_claim(tx_json)
         
         # Verify the signature
-        return keypairs.is_valid_message(tx_blob, bytes.fromhex(payment_tx_signature), xrp_address)
+        return keypairs.is_valid_message(encoded_tx, bytes.fromhex(payment_tx_signature), xrp_address)
 
     def create_payment_transaction(self, source, destination, amount):
         return Payment(
