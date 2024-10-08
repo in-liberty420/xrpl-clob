@@ -52,7 +52,11 @@ class XRPLIntegration:
         try:
             # Ensure the signature is in the correct format
             logger.debug(f"Payment signature before fromhex: {payment_tx_signature}")
-            signature_bytes = bytes.fromhex(payment_tx_signature)
+            logger.debug(f"Payment signature type: {type(payment_tx_signature)}")
+            logger.debug(f"Is hex: {all(c in '0123456789ABCDEFabcdef' for c in payment_tx_signature)}")
+            
+            # Try to decode the signature
+            signature_bytes = bytes.fromhex(payment_tx_signature.strip())
             logger.debug(f"Payment signature after fromhex: {signature_bytes.hex()}")
             
             # Verify the signature
