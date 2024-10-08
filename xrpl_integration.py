@@ -10,6 +10,7 @@ from xrpl.core import keypairs
 from xrpl.account import get_next_valid_seq_number
 from xrpl.ledger import get_fee
 from xrpl.core.binarycodec import encode_for_signing
+from xrpl.core.binarycodec import encode_for_signing
 
 logger = logging.getLogger(__name__)
 
@@ -52,13 +53,13 @@ class XRPLIntegration:
             }
             logger.debug(f"Original transaction JSON: {json.dumps(tx_json, indent=2)}")
 
-            # Step 2: Serialize the Transaction
+            # Step 2: Serialize the Transaction using encode_for_signing
             serialized_txn = encode_for_signing(tx_json)
             logger.debug(f"Serialized transaction: {serialized_txn.hex()}")
 
             # Step 3: Verify the Signature
             is_valid = keypairs.is_valid_message(
-                message=serialized_txn,  # Use serialized_txn directly, it's already bytes
+                message=serialized_txn,
                 signature=bytes.fromhex(payment_tx_signature),
                 public_key=public_key
             )
