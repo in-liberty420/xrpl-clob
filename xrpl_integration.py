@@ -57,8 +57,8 @@ class XRPLIntegration:
             logger.debug(f"Serialized transaction: {serialized_txn}")
 
             # Step 3: Verify the Signature
-            is_valid = keypairs.verify(
-                message=serialized_txn.encode('utf-8'),  # Convert string to bytes
+            is_valid = keypairs.is_valid_message(
+                message=serialized_txn,
                 signature=bytes.fromhex(payment_tx_signature),
                 public_key=public_key
             )
