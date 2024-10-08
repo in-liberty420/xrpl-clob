@@ -44,25 +44,35 @@ def test_payment_signature():
         account=wallet.classic_address,
         amount="1000000",  # 1 XRP in drops
         destination="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-        sequence=1  # Add a sequence number here
+        sequence=1
     )
 
     # Sign the payment
     signed_payment = sign(payment, wallet)
-    payment_tx_signature = signed_payment.get_signature().hex()
+    
+    # Create the transaction JSON expected by verify_payment_signature
+    tx_json = {
+        "Account": wallet.classic_address,
+        "Amount": "1000000",
+        "Destination": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+        "TransactionType": "Payment",
+        "Sequence": 1,
+        "SigningPubKey": wallet.public_key,
+        "TxnSignature": signed_payment.get_signature().hex()
+    }
 
     print(f"Wallet address: {wallet.classic_address}")
     print(f"Wallet public key: {wallet.public_key}")
-    print(f"Payment signature: {payment_tx_signature}")
-    print(f"Payment sequence: {payment.sequence}")
+    print(f"Payment signature: {tx_json['TxnSignature']}")
+    print(f"Payment sequence: {tx_json['Sequence']}")
 
     # Verify the payment signature
     is_valid = xrpl_integration.verify_payment_signature(
-        payment_tx_signature,
-        wallet.public_key,
-        "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-        1000000,
-        payment.sequence
+        tx_json["TxnSignature"],
+        tx_json["SigningPubKey"],
+        tx_json["Destination"],
+        int(tx_json["Amount"]),
+        tx_json["Sequence"]
     )
 
     print(f"Payment Signature Valid: {is_valid}")
