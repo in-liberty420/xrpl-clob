@@ -73,7 +73,7 @@ async def place_order():
     
     # Sign the transaction
     signed_payment = await autofill_and_sign(payment, client, wallet)
-    payment_tx_signature = signed_payment.get_hash()
+    payment_tx_signature = signed_payment.get_tx_signing_hash()
 
     logger.debug(f"Payment transaction signature: {payment_tx_signature}")
 

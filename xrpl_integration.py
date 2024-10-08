@@ -42,18 +42,21 @@ class XRPLIntegration:
             return False
         
         try:
-            # Prepare the Transaction JSON
-            tx_json = {
-                "Account": keypairs.derive_classic_address(public_key),
-                "Amount": str(amount_drops),
-                "Destination": multisig_destination,
-                "TransactionType": "Payment",
-                "Sequence": sequence,
-                "SigningPubKey": public_key,
-            }
-            logger.debug(f"Original transaction JSON: {json.dumps(tx_json, indent=2)}")
-
-            # Serialize the Transaction using encode_for_signing
+            # Create a Payment object
+            payment = Payment(
+                account=keypairs.derive_classic_address(public_key),
+                amount=str(amount_drops),
+                destination=multisig_destination,
+                sequence=sequence,
+            )
+            
+            # Autofill the transaction (this adds necessary fields like Fee, Flags, etc.)
+            filled_payment = autofill(payment, self.client)
+            
+            # Convert to dictionary and remove TxnSignature and hash fields
+            tx_json = {k: v for k, v in filled_payment.to_xrpl().items() if k not in ["TxnSignature", "hash"]}
+            
+            # Serialize the transaction
             signing_data = encode_for_signing(tx_json)
             
             # Convert the hex string to bytes
