@@ -71,12 +71,12 @@ class MatchingEngine:
         matched_orders.extend(self.pro_rata_match(supply, clearing_price, max_volume, total_supply, lambda p: p <= clearing_price))
 
         # Update order amounts after matching
-        for order in matched_orders:
-            order.matched_amount = order.amount
-            order.amount -= order.matched_amount
+        for order, filled_amount in matched_orders:
+            order.matched_amount = filled_amount
+            order.amount -= filled_amount
 
         # Process settlement
-        if self.settlement.process_matched_orders(matched_orders):
+        if self.settlement.process_matched_orders([order for order, _ in matched_orders]):
             # Remove fully filled orders and update partially filled orders
             self.update_order_book(matched_orders)
         else:
@@ -88,7 +88,7 @@ class MatchingEngine:
         self.clean_order_book()
 
     def update_order_book(self, matched_orders):
-        for order in matched_orders:
+        for order, filled_amount in matched_orders:
             if order.amount == 0:
                 self.order_book.remove_order(order)
             else:
@@ -116,11 +116,9 @@ class MatchingEngine:
             if total_eligible_volume > 0:
                 fill_ratio = min(1, max_volume / total_eligible_volume)
                 filled_amount = min(order.amount, order.amount * fill_ratio)
-                order.amount -= filled_amount
+                matched_orders.append((order, filled_amount))
                 max_volume -= filled_amount
-                total_eligible_volume -= filled_amount
-                matched_orders.append(order)
-            # Here you would typically record the trade or notify the user
+                total_eligible_volume -= order.amount
         
         return matched_orders
 
