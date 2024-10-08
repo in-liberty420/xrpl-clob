@@ -1,9 +1,10 @@
 import json
 from xrpl.core import keypairs
-from xrpl.transaction import safe_sign_and_autofill_transaction
+from xrpl.transaction import sign_and_submit
 from xrpl.models import Payment
 from xrpl.wallet import Wallet
-from xrpl.core.binarycodec import encode_for_signing, decode
+from xrpl.core.binarycodec import encode_for_signing
+from xrpl.clients import JsonRpcClient
 
 # Load the test wallet
 with open("test_wallet.json", "r") as f:
@@ -19,8 +20,11 @@ payment = Payment(
     destination="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
 )
 
-# Sign the transaction
-signed_tx = safe_sign_and_autofill_transaction(payment, wallet)
+# Create a client connection
+client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
+
+# Sign the transaction (but don't submit)
+signed_tx = sign_and_submit(payment, wallet, client, autofill=True, submit=False)
 
 # Extract the relevant parts of the signed transaction
 tx_blob = signed_tx.to_xrpl()
@@ -44,7 +48,6 @@ is_valid = keypairs.is_valid_message(
 print(f"Signature valid: {is_valid}")
 
 # As an additional check, let's verify using the built-in verify method
-tx_blob_bytes = decode(signed_tx.to_xrpl())
-is_valid_builtin = signed_tx.verify(tx_blob_bytes)
+is_valid_builtin = signed_tx.verify()
 
 print(f"Signature valid (using built-in verify): {is_valid_builtin}")
