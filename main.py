@@ -25,6 +25,14 @@ def main():
             print(f"Error creating wallet: {str(e)}")
             return
     
+    # Get and print the multisig wallet address
+    multisig_address = multisig_wallet.get_address()
+    print(f"Multisig wallet address: {multisig_address}")
+    
+    # Store this address in a file for easy access
+    with open("multisig_address.txt", "w") as f:
+        f.write(multisig_address)
+    
     matching_engine = MatchingEngine(order_book, xrpl_integration, multisig_wallet)
     api = API(order_book, matching_engine, xrpl_integration)
     

@@ -15,6 +15,10 @@ def load_test_wallet():
         wallet_info = json.load(f)
     return Wallet(wallet_info['public_key'], wallet_info['private_key'])
 
+def get_multisig_address():
+    with open("multisig_address.txt", "r") as f:
+        return f.read().strip()
+
 def place_order():
     url = "http://127.0.0.1:5000/place_order"
     
@@ -26,8 +30,9 @@ def place_order():
     client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
     current_sequence = client.request(AccountInfo(account=wallet.classic_address)).result['account_data']['Sequence']
 
-    # Multisig wallet address (replace with your actual multisig wallet address)
-    multisig_destination = "rMultisigWalletAddressHere"
+    # Get the multisig wallet address
+    multisig_destination = get_multisig_address()
+    logger.debug(f"Multisig destination address: {multisig_destination}")
 
     # Create order data
     order_data = {
