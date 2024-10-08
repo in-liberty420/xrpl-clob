@@ -36,3 +36,13 @@ class XRPLIntegration:
         # Return True if the signature is valid, False otherwise
         pass
 
+    def create_payment_transaction(self, source, destination, amount):
+        return Payment(
+            account=source,
+            destination=destination,
+            amount=str(amount)
+        )
+
+    def submit_transaction(self, signed_transaction):
+        return submit_and_wait(signed_transaction, self.client)
+
