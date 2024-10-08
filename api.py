@@ -53,9 +53,7 @@ class API:
                 payment_signature_valid = self.xrpl_integration.verify_payment_signature(
                     order.payment_tx_signature,
                     order.public_key,
-                    order.multisig_destination,
-                    order.amount,
-                    order.sequence
+                    data['signed_tx_json']
                 )
                 logger.debug(f"Payment signature verification result: {payment_signature_valid}")
 

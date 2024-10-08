@@ -75,26 +75,20 @@ async def place_order():
     signed_payment = await autofill_and_sign(payment, client, wallet)
 
     # Extract the relevant parts of the signed transaction
-    tx_blob = signed_payment.to_xrpl()
-    signature = tx_blob["TxnSignature"]
     signed_tx_json = signed_payment.to_xrpl()
+    signature = signed_tx_json["TxnSignature"]
 
-    # Remove fields that are not part of the signed data
-    signing_json = {k: v for k, v in signed_tx_json.items() if k not in ["TxnSignature", "hash"]}
-    signing_data = encode_for_signing(signing_json)
-
-    payment_tx_signature = signature
-
-    logger.debug(f"Payment transaction signature: {payment_tx_signature}")
-    logger.debug(f"Signed payment methods: {dir(signed_payment)}")
+    logger.debug(f"Signed transaction JSON: {json.dumps(signed_tx_json, indent=2)}")
+    logger.debug(f"Payment transaction signature: {signature}")
 
     # Prepare payload
     payload = {
         **order_data,
         "xrp_address": wallet.classic_address,
         "public_key": wallet.public_key,
-        "payment_tx_signature": payment_tx_signature,
-        "amount_drops": amount_drops
+        "payment_tx_signature": signature,
+        "amount_drops": amount_drops,
+        "signed_tx_json": signed_tx_json
     }
     # TODO: Add order data signature to payload when implemented
     logger.debug(f"Payload: {payload}")

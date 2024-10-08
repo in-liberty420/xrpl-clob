@@ -35,25 +35,14 @@ class XRPLIntegration:
         response = self.client.request(request)
         return response.result['account_data']['Sequence']
 
-    def verify_payment_signature(self, payment_tx_signature, public_key, multisig_destination, amount_drops, sequence):
+    def verify_payment_signature(self, payment_tx_signature, public_key, signed_tx_json):
         if payment_tx_signature is None:
             logger.error("Payment signature is None")
             return False
         
         try:
-            # Create a Payment object
-            payment = Payment(
-                account=keypairs.derive_classic_address(public_key),
-                amount=str(amount_drops),
-                destination=multisig_destination,
-                sequence=sequence,
-            )
-            
-            # Autofill the transaction (this adds necessary fields like Fee, Flags, etc.)
-            filled_payment = autofill(payment, self.client)
-            
-            # Convert to dictionary and remove TxnSignature and hash fields
-            tx_json = {k: v for k, v in filled_payment.to_xrpl().items() if k not in ["TxnSignature", "hash"]}
+            # Remove TxnSignature and hash fields
+            tx_json = {k: v for k, v in signed_tx_json.items() if k not in ["TxnSignature", "hash"]}
             
             # Serialize the transaction
             signing_data = encode_for_signing(tx_json)
