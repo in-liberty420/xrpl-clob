@@ -3,3 +3,4 @@
 /venv-xrpl
 /venv1
 *.pyc
+encrypted_wallet.key
