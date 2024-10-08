@@ -31,14 +31,16 @@ async def main():
         # Extract the relevant parts of the signed transaction
         tx_blob = signed_tx.to_xrpl()
         signature = tx_blob["TxnSignature"]
-        signed_tx_json = signed_tx.to_dict()
+        signed_tx_json = signed_tx.to_xrpl()
 
         print(f"Signed transaction: {json.dumps(signed_tx_json, indent=2)}")
         print(f"Signature: {signature}")
 
         # Verify the signature
         # First, we need to recreate the signing data
-        signing_data = encode_for_signing(signed_tx_json)
+        # We need to remove fields that are not part of the signed data
+        signing_json = {k: v for k, v in signed_tx_json.items() if k not in ["TxnSignature", "hash"]}
+        signing_data = encode_for_signing(signing_json)
 
         # Now verify the signature
         is_valid = keypairs.is_valid_message(
