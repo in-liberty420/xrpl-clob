@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 class Order:
     def __init__(self, price, amount, order_type, xrp_address, public_key, expiration=None, sequence=None, payment_tx_signature=None, multisig_destination=None, last_ledger_sequence=None):
         self.price = price
-        self.amount = amount
+        self.amount = int(amount)  # Convert to integer here
         self.order_type = order_type
         self.xrp_address = xrp_address
         self.public_key = public_key
