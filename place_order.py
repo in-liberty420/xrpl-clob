@@ -1,14 +1,16 @@
 import httpx
 import json
 import time
+import asyncio
 from xrpl.wallet import Wallet
-from xrpl.clients import JsonRpcClient
+from xrpl.asyncio.clients import AsyncJsonRpcClient
 from xrpl.core import keypairs
 from xrpl.models import AccountInfo, Payment
-from xrpl.transaction import sign
+from xrpl.asyncio.transaction import autofill_and_sign
 from xrpl.account import get_next_valid_seq_number
 from xrpl.ledger import get_fee
 import xrpl.utils
+from xrpl.core.binarycodec import encode_for_signing
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -23,7 +25,7 @@ def get_multisig_address():
     with open("multisig_address.txt", "r") as f:
         return f.read().strip()
 
-def place_order():
+async def place_order():
     url = "http://127.0.0.1:5000/place_order"
     
     # Load the test wallet
@@ -31,8 +33,9 @@ def place_order():
     logger.debug(f"Loaded wallet with address: {wallet.classic_address}")
     
     # Get the current sequence number
-    client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
-    current_sequence = client.request(AccountInfo(account=wallet.classic_address)).result['account_data']['Sequence']
+    client = AsyncJsonRpcClient("https://s.altnet.rippletest.net:51234")
+    account_info = await client.request(AccountInfo(account=wallet.classic_address))
+    current_sequence = account_info.result['account_data']['Sequence']
 
     # Get the multisig wallet address
     multisig_destination = get_multisig_address()
@@ -49,16 +52,17 @@ def place_order():
     }
     logger.debug(f"Order data: {order_data}")
     
-    # Sign the order
-    message = json.dumps(order_data)
-    signature = keypairs.sign(message.encode(), wallet.private_key)
-    logger.debug(f"Message to sign: {message}")
+    # Sign the order using encode_for_signing
+    signing_data = encode_for_signing(order_data)
+    signing_data_bytes = bytes.fromhex(signing_data)
+    signature = keypairs.sign(signing_data_bytes, wallet.private_key)
+    logger.debug(f"Message to sign: {signing_data}")
     logger.debug(f"Signature: {signature}")
     logger.debug(f"Public key: {wallet.public_key}")
 
     # Get the next valid sequence number and current fee
-    sequence = get_next_valid_seq_number(wallet.classic_address, client)
-    fee = get_fee(client)
+    sequence = await get_next_valid_seq_number(wallet.classic_address, client)
+    fee = await get_fee(client)
 
     # Convert the amount to drops
     amount_drops = xrpl.utils.xrp_to_drops(order_data['amount'])
@@ -73,21 +77,17 @@ def place_order():
     )
     
     # Sign the transaction
-    signed_payment = sign(payment, wallet)
-    payment_tx_signature = signed_payment.txn_signature
+    signed_payment = await autofill_and_sign(payment, client, wallet)
+    payment_tx_signature = signed_payment.get_hash()
 
-    # The signature is already a string, so we don't need to call .hex()
-    payment_tx_signature_hex = payment_tx_signature
-    logger.debug(f"Payment transaction signature type: {type(payment_tx_signature_hex)}")
-    logger.debug(f"Payment transaction signature: {payment_tx_signature_hex}")
-    logger.debug(f"Is hex: {all(c in '0123456789ABCDEFabcdef' for c in payment_tx_signature_hex)}")
+    logger.debug(f"Payment transaction signature: {payment_tx_signature}")
 
     # Prepare payload
     payload = {
         **order_data,
         "xrp_address": wallet.classic_address,
         "public_key": wallet.public_key,
-        "signature": signature,
+        "signature": signature.hex(),
         "payment_tx_signature": payment_tx_signature,
         "amount_drops": amount_drops
     }
@@ -96,8 +96,8 @@ def place_order():
     headers = {"Content-Type": "application/json"}
 
     # Send request using httpx
-    with httpx.Client() as client:
-        response = client.post(url, json=payload, headers=headers)
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=payload, headers=headers)
     
     logger.debug(f"Status Code: {response.status_code}")
     logger.debug(f"Response Headers: {response.headers}")
@@ -110,11 +110,11 @@ def place_order():
 
     # Check the L2 order book
     l2_order_book_url = "http://127.0.0.1:5000/l2_order_book"
-    with httpx.Client() as client:
-        l2_order_book_response = client.get(l2_order_book_url)
+    async with httpx.AsyncClient() as client:
+        l2_order_book_response = await client.get(l2_order_book_url)
     logger.debug("\nL2 Order book:")
     logger.debug(f"Status Code: {l2_order_book_response.status_code}")
     logger.debug(f"Response Content: {l2_order_book_response.text}")
 
 if __name__ == "__main__":
-    place_order()
+    asyncio.run(place_order())
