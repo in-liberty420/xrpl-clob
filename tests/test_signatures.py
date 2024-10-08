@@ -5,9 +5,14 @@ from xrpl.models import Payment
 from xrpl.transaction import sign
 from xrpl_integration import XRPLIntegration
 
+def load_test_wallet():
+    with open("test_wallet.json", "r") as f:
+        wallet_info = json.load(f)
+    return Wallet(wallet_info['public_key'], wallet_info['private_key'])
+
 def test_order_signature():
-    # Create a test wallet
-    wallet = Wallet.create()
+    # Load the test wallet
+    wallet = load_test_wallet()
 
     # Create sample order data
     order_data = {
@@ -30,8 +35,8 @@ def test_order_signature():
     assert is_valid, "Order signature verification failed"
 
 def test_payment_signature():
-    # Create a test wallet and XRPLIntegration instance
-    wallet = Wallet.create()
+    # Load the test wallet and create XRPLIntegration instance
+    wallet = load_test_wallet()
     xrpl_integration = XRPLIntegration()
 
     # Create a sample payment
@@ -43,20 +48,17 @@ def test_payment_signature():
 
     # Sign the payment
     signed_payment = sign(payment, wallet)
-    payment_tx_signature = signed_payment.txn_signature
-    
-    # Ensure payment_tx_signature is a hex string
-    if isinstance(payment_tx_signature, bytes):
-        payment_tx_signature = payment_tx_signature.hex()
-    elif isinstance(payment_tx_signature, str):
-        # If it's already a string, ensure it's a valid hex string
-        if not all(c in '0123456789ABCDEFabcdef' for c in payment_tx_signature):
-            raise ValueError("Invalid hex string in txn_signature")
+    payment_tx_signature = signed_payment.get_hash().hex()
+
+    print(f"Wallet address: {wallet.classic_address}")
+    print(f"Wallet public key: {wallet.public_key}")
+    print(f"Payment signature: {payment_tx_signature}")
+    print(f"Payment sequence: {payment.sequence}")
 
     # Verify the payment signature
     is_valid = xrpl_integration.verify_payment_signature(
         payment_tx_signature,
-        wallet.classic_address,
+        wallet.public_key,
         "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
         1000000,
         payment.sequence

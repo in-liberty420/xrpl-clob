@@ -33,14 +33,14 @@ class XRPLIntegration:
         response = self.client.request(request)
         return response.result['account_data']['Sequence']
 
-    def verify_payment_signature(self, payment_tx_signature, xrp_address, multisig_destination, amount_drops, sequence):
+    def verify_payment_signature(self, payment_tx_signature, public_key, multisig_destination, amount_drops, sequence):
         if payment_tx_signature is None:
             logger.error("Payment signature is None")
             return False
         
         # Prepare the transaction data for signing
         tx_json = {
-            "Account": xrp_address,
+            "Account": keypairs.derive_classic_address(public_key),
             "Amount": str(amount_drops),
             "Destination": multisig_destination,
             "TransactionType": "Payment",
@@ -58,8 +58,12 @@ class XRPLIntegration:
             # Convert the hex string back to bytes
             signature_bytes = bytes.fromhex(payment_tx_signature)
             
+            logger.debug(f"Encoded transaction: {encoded_tx.hex()}")
+            logger.debug(f"Signature bytes: {signature_bytes.hex()}")
+            logger.debug(f"Public key: {public_key}")
+            
             # Verify the signature
-            is_valid = keypairs.is_valid_message(encoded_tx, signature_bytes, xrp_address)
+            is_valid = keypairs.is_valid_message(encoded_tx, signature_bytes, public_key)
             logger.debug(f"Signature verification result: {is_valid}")
             return is_valid
         except ValueError as e:
