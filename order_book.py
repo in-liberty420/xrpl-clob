@@ -2,13 +2,12 @@ import time
 from collections import defaultdict
 
 class Order:
-    def __init__(self, price, amount, order_type, xrp_address, public_key, signature, expiration=None, sequence=None, payment_tx_signature=None, multisig_destination=None, last_ledger_sequence=None):
+    def __init__(self, price, amount, order_type, xrp_address, public_key, expiration=None, sequence=None, payment_tx_signature=None, multisig_destination=None, last_ledger_sequence=None):
         self.price = price
         self.amount = amount
         self.order_type = order_type
         self.xrp_address = xrp_address
         self.public_key = public_key
-        self.signature = signature
         self.expiration = expiration if expiration is not None else int(time.time()) + 300  # Unix time, 5 minutes from now
         self.sequence = sequence
         self.payment_tx_signature = payment_tx_signature
@@ -26,7 +25,7 @@ class OrderBook:
             self.bids[order.price].append(order)
         elif order.order_type == "sell":
             self.asks[order.price].append(order)
-        self.order_map[order.signature] = order  # Using signature as a unique identifier
+        self.order_map[order.payment_tx_signature] = order  # Using payment_tx_signature as a unique identifier
 
     def remove_order(self, order):
         if order.order_type == "buy":
@@ -37,7 +36,7 @@ class OrderBook:
             self.asks[order.price].remove(order)
             if not self.asks[order.price]:
                 del self.asks[order.price]
-        del self.order_map[order.signature]
+        del self.order_map[order.payment_tx_signature]
 
     def get_l2_order_book(self):
         current_time = int(time.time())
@@ -58,4 +57,4 @@ class OrderBook:
             self.asks[price] = [order for order in orders if order.expiration > current_time]
             if not self.asks[price]:
                 del self.asks[price]
-        self.order_map = {sig: order for sig, order in self.order_map.items() if order.expiration > current_time}
+        self.order_map = {tx_sig: order for tx_sig, order in self.order_map.items() if order.expiration > current_time}
