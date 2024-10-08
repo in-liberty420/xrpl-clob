@@ -43,7 +43,7 @@ def test_payment_signature():
 
     # Sign the payment
     signed_payment = sign(payment, wallet)
-    payment_tx_signature = signed_payment.get_signature().hex()
+    payment_tx_signature = signed_payment.txn_signature.hex()
 
     # Verify the payment signature
     is_valid = xrpl_integration.verify_payment_signature(
