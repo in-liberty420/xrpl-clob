@@ -83,16 +83,16 @@ class MatchingEngine:
                 del self.order_book.asks[price]
 
     def pro_rata_match(self, orders, clearing_price, max_volume, total_eligible_volume, price_condition):
-        for price, order_list in orders.items():
-            if price_condition(price):
-                for order in order_list:
-                    if total_eligible_volume > 0:
-                        fill_ratio = min(1, max_volume / total_eligible_volume)
-                        filled_amount = min(order.amount, order.amount * fill_ratio)
-                        order.amount -= filled_amount
-                        max_volume -= filled_amount
-                        total_eligible_volume -= order.amount
-                    # Here you would typically record the trade or notify the user
+        eligible_orders = [order for price, order_list in orders.items() if price_condition(price) for order in order_list]
+        
+        for order in eligible_orders:
+            if total_eligible_volume > 0:
+                fill_ratio = min(1, max_volume / total_eligible_volume)
+                filled_amount = min(order.amount, order.amount * fill_ratio)
+                order.amount -= filled_amount
+                max_volume -= filled_amount
+                total_eligible_volume -= filled_amount
+            # Here you would typically record the trade or notify the user
 
     def clean_order_book(self):
         current_time = int(time.time())
