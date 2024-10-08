@@ -43,7 +43,8 @@ def test_payment_signature():
     payment = Payment(
         account=wallet.classic_address,
         amount="1000000",  # 1 XRP in drops
-        destination="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
+        destination="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+        sequence=1  # Add a sequence number here
     )
 
     # Sign the payment

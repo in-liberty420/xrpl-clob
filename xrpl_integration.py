@@ -58,7 +58,7 @@ class XRPLIntegration:
             # Convert the hex string back to bytes
             signature_bytes = bytes.fromhex(payment_tx_signature)
             
-            logger.debug(f"Encoded transaction: {encoded_tx.hex()}")
+            logger.debug(f"Encoded transaction: {encoded_tx}")  # Removed .hex()
             logger.debug(f"Signature bytes: {signature_bytes.hex()}")
             logger.debug(f"Public key: {public_key}")
             
