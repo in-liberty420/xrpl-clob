@@ -1,7 +1,7 @@
 import requests
 import json
 import time
-from xrpl.wallet import generate_faucet_wallet
+from xrpl.wallet import Wallet
 from xrpl.clients import JsonRpcClient
 from xrpl.core import keypairs
 from xrpl.models import AccountInfo
@@ -10,15 +10,20 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+def load_test_wallet():
+    with open("test_wallet.json", "r") as f:
+        wallet_info = json.load(f)
+    return Wallet(wallet_info['public_key'], wallet_info['private_key'])
+
 def place_order():
     url = "http://127.0.0.1:5000/place_order"
     
-    # Generate a test wallet
-    client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
-    wallet = generate_faucet_wallet(client)
-    logger.debug(f"Generated wallet with address: {wallet.classic_address}")
+    # Load the test wallet
+    wallet = load_test_wallet()
+    logger.debug(f"Loaded wallet with address: {wallet.classic_address}")
     
     # Get the current sequence number
+    client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
     current_sequence = client.request(AccountInfo(account=wallet.classic_address)).result['account_data']['Sequence']
 
     # Create order data
