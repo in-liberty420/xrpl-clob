@@ -47,9 +47,10 @@ class TestMatchingEngine:
         matching_engine.match_orders()
 
         # Check that orders were filled proportionally
-        assert 0 < matching_engine.order_book.bids[100][0].amount < 6
-        assert 0 < matching_engine.order_book.bids[100][1].amount < 4
-        assert matching_engine.order_book.asks[100][0].amount == 5  # 15 - (6 + 4)
+        assert len(matching_engine.order_book.bids[100]) == 2
+        assert matching_engine.order_book.bids[100][0].amount == 1  # 6 - (6 * 10/15)
+        assert matching_engine.order_book.bids[100][1].amount == 0.6666666666666667  # 4 - (4 * 10/15)
+        assert matching_engine.order_book.asks[100][0].amount == 5  # 15 - 10
 
     def test_partial_fill(self, matching_engine):
         matching_engine.order_book.add_order(create_order(100, 10, "buy", "1"))

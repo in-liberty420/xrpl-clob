@@ -22,31 +22,28 @@ class MatchingEngine:
         demand = self.order_book.bids
         supply = self.order_book.asks
 
-        # Find clearing price
-        clearing_price = self.find_clearing_price(demand, supply)
+        # Find clearing price and max volume
+        clearing_price, max_volume = self.find_clearing_price(demand, supply)
 
         if clearing_price is not None:
             # Execute trades using pro-rata matching
-            self.execute_trades(clearing_price, demand, supply)
+            self.execute_trades(clearing_price, max_volume, demand, supply)
 
     def find_clearing_price(self, demand, supply):
         all_prices = sorted(set(demand.keys()) | set(supply.keys()))
         max_volume = 0
-        min_imbalance = float('inf')
         clearing_price = None
 
         for price in all_prices:
             cumulative_demand = sum(sum(order.amount for order in demand[p]) for p in demand if p >= price)
             cumulative_supply = sum(sum(order.amount for order in supply[p]) for p in supply if p <= price)
             volume = min(cumulative_demand, cumulative_supply)
-            imbalance = abs(cumulative_demand - cumulative_supply)
 
-            if volume > max_volume or (volume == max_volume and imbalance < min_imbalance):
+            if volume > max_volume:
                 max_volume = volume
-                min_imbalance = imbalance
                 clearing_price = price
-            elif volume == max_volume and imbalance == min_imbalance:
-                # If still tied, choose price closest to last traded price
+            elif volume == max_volume and clearing_price is not None:
+                # If volume is the same, choose the price closest to the last traded price
                 if self.last_clearing_price is not None:
                     if abs(price - self.last_clearing_price) < abs(clearing_price - self.last_clearing_price):
                         clearing_price = price
@@ -54,21 +51,19 @@ class MatchingEngine:
         if clearing_price is not None:
             self.last_clearing_price = clearing_price
 
-        return self.last_clearing_price
+        return clearing_price, max_volume
 
-    def execute_trades(self, clearing_price, demand, supply):
-        executed_volume = min(
-            sum(sum(order.amount for order in demand[p]) for p in demand if p >= clearing_price),
-            sum(sum(order.amount for order in supply[p]) for p in supply if p <= clearing_price)
-        )
+    def execute_trades(self, clearing_price, max_volume, demand, supply):
+        print(f"Batch auction executed: {max_volume} @ {clearing_price}")
 
-        print(f"Batch auction executed: {executed_volume} @ {clearing_price}")
+        total_demand = sum(sum(order.amount for order in demand[p]) for p in demand if p >= clearing_price)
+        total_supply = sum(sum(order.amount for order in supply[p]) for p in supply if p <= clearing_price)
 
         # Pro-rata matching for bids
-        self.pro_rata_match(demand, clearing_price, executed_volume, lambda p: p >= clearing_price)
+        self.pro_rata_match(demand, clearing_price, max_volume, total_demand, lambda p: p >= clearing_price)
 
         # Pro-rata matching for asks
-        self.pro_rata_match(supply, clearing_price, executed_volume, lambda p: p <= clearing_price)
+        self.pro_rata_match(supply, clearing_price, max_volume, total_supply, lambda p: p <= clearing_price)
 
         # Remove fully filled orders
         self.remove_filled_orders()
@@ -87,23 +82,17 @@ class MatchingEngine:
             if not self.order_book.asks[price]:
                 del self.order_book.asks[price]
 
-    def pro_rata_match(self, orders, clearing_price, executed_volume, price_condition):
-        eligible_orders = [
-            order for price, order_list in orders.items()
-            if price_condition(price)
-            for order in order_list
-        ]
-
-        total_eligible_volume = sum(order.amount for order in eligible_orders)
-
-        for order in eligible_orders:
-            if total_eligible_volume > 0:
-                fill_ratio = min(1, executed_volume / total_eligible_volume)
-                filled_amount = min(order.amount, order.amount * fill_ratio)
-                order.amount -= filled_amount
-                executed_volume -= filled_amount
-                total_eligible_volume -= filled_amount
-            # Here you would typically record the trade or notify the user
+    def pro_rata_match(self, orders, clearing_price, max_volume, total_eligible_volume, price_condition):
+        for price, order_list in orders.items():
+            if price_condition(price):
+                for order in order_list:
+                    if total_eligible_volume > 0:
+                        fill_ratio = min(1, max_volume / total_eligible_volume)
+                        filled_amount = min(order.amount, order.amount * fill_ratio)
+                        order.amount -= filled_amount
+                        max_volume -= filled_amount
+                        total_eligible_volume -= order.amount
+                    # Here you would typically record the trade or notify the user
 
     def clean_order_book(self):
         current_time = int(time.time())
