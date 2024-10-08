@@ -1,6 +1,6 @@
 import json
 from xrpl.core import keypairs
-from xrpl.transaction import sign_and_submit
+from xrpl.transaction import sign_transaction, autofill_transaction
 from xrpl.models import Payment
 from xrpl.wallet import Wallet
 from xrpl.core.binarycodec import encode_for_signing
@@ -23,8 +23,11 @@ payment = Payment(
 # Create a client connection
 client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
 
+# Autofill the transaction
+autofilled_tx = autofill_transaction(payment, client)
+
 # Sign the transaction (but don't submit)
-signed_tx = sign_and_submit(payment, wallet, client, autofill=True, submit=False)
+signed_tx = sign_transaction(autofilled_tx, wallet)
 
 # Extract the relevant parts of the signed transaction
 tx_blob = signed_tx.to_xrpl()
