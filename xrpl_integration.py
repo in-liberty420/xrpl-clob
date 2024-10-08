@@ -2,8 +2,10 @@ from xrpl.clients import JsonRpcClient
 from xrpl.models.transactions import Payment
 from xrpl.models import AccountInfo
 from xrpl.wallet import generate_faucet_wallet
-from xrpl.transaction import submit_and_wait, safe_sign_and_autofill_transaction
+from xrpl.transaction import submit_and_wait
 from xrpl.core import keypairs
+from xrpl.account import get_next_valid_seq_number
+from xrpl.ledger import get_fee
 
 class XRPLIntegration:
     def __init__(self):
@@ -38,15 +40,19 @@ class XRPLIntegration:
             destination=multisig_destination
         )
         
-        # Get the account info to fill in the sequence and fee
-        account_info = self.client.request(AccountInfo(account=xrp_address))
-        sequence = account_info.result['account_data']['Sequence']
+        # Get the next valid sequence number and the current fee
+        sequence = get_next_valid_seq_number(xrp_address, self.client)
+        fee = get_fee(self.client)
         
-        # Autofill the transaction
-        filled_tx = safe_sign_and_autofill_transaction(payment, self.client, xrp_address)
+        # Manually fill in the transaction fields
+        payment.sequence = sequence
+        payment.fee = fee
+        
+        # Convert the transaction to its canonical form
+        tx_blob = payment.to_xrpl()
         
         # Verify the signature
-        return keypairs.is_valid_message(filled_tx.to_xrpl(), bytes.fromhex(payment_tx_signature), xrp_address)
+        return keypairs.is_valid_message(tx_blob, bytes.fromhex(payment_tx_signature), xrp_address)
 
     def create_payment_transaction(self, source, destination, amount):
         return Payment(

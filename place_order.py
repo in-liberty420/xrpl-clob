@@ -5,7 +5,9 @@ from xrpl.wallet import Wallet
 from xrpl.clients import JsonRpcClient
 from xrpl.core import keypairs
 from xrpl.models import AccountInfo, Payment
-from xrpl.transaction import safe_sign_and_autofill_transaction
+from xrpl.transaction import sign
+from xrpl.account import get_next_valid_seq_number
+from xrpl.ledger import get_fee
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -59,7 +61,17 @@ def place_order():
         amount=str(order_data['amount']),
         destination=multisig_destination
     )
-    signed_payment = safe_sign_and_autofill_transaction(payment, client, wallet)
+    
+    # Get the next valid sequence number and current fee
+    sequence = get_next_valid_seq_number(wallet.classic_address, client)
+    fee = get_fee(client)
+    
+    # Set the sequence and fee
+    payment.sequence = sequence
+    payment.fee = fee
+    
+    # Sign the transaction
+    signed_payment = sign(payment, wallet)
     payment_tx_signature = signed_payment.get_hash()
     logger.debug(f"Payment transaction signature: {payment_tx_signature}")
 
