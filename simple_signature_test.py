@@ -26,7 +26,7 @@ async def main():
     client = AsyncJsonRpcClient("https://s.altnet.rippletest.net:51234")
     try:
         # Autofill and sign the transaction (but don't submit)
-        signed_tx = await autofill_and_sign(payment, wallet, client)
+        signed_tx = await autofill_and_sign(payment, client, wallet)
 
         # Extract the relevant parts of the signed transaction
         tx_blob = signed_tx.to_xrpl()
@@ -54,7 +54,8 @@ async def main():
 
         print(f"Signature valid (using built-in verify): {is_valid_builtin}")
     finally:
-        await client.close()
+        # AsyncJsonRpcClient doesn't have a close method, so we'll remove this line
+        pass
 
 if __name__ == "__main__":
     asyncio.run(main())
