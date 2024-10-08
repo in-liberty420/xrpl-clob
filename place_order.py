@@ -4,6 +4,7 @@ import time
 from xrpl.wallet import generate_faucet_wallet
 from xrpl.clients import JsonRpcClient
 from xrpl.core import keypairs
+from xrpl.models import AccountInfo
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
