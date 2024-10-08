@@ -1,5 +1,8 @@
 import time
 from collections import defaultdict
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Order:
     def __init__(self, price, amount, order_type, xrp_address, public_key, expiration=None, sequence=None, payment_tx_signature=None, multisig_destination=None, last_ledger_sequence=None):
@@ -26,6 +29,7 @@ class OrderBook:
         elif order.order_type == "sell":
             self.asks[order.price].append(order)
         self.order_map[order.payment_tx_signature] = order  # Using payment_tx_signature as a unique identifier
+        logger.info(f"Order added to the book: {order.__dict__}")
 
     def remove_order(self, order):
         if order.order_type == "buy":

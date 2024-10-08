@@ -16,6 +16,13 @@ class API:
         self.pending_orders = {}
 
         self.setup_routes()
+        self.process_pending_orders()  # Process any existing pending orders on startup
+
+    def process_pending_orders(self):
+        for address, orders in self.pending_orders.items():
+            for order in orders:
+                self.order_book.add_order(order)
+            self.pending_orders[address] = []  # Clear processed orders
 
     def setup_routes(self):
         @self.app.route('/place_order', methods=['POST'])
@@ -65,8 +72,9 @@ class API:
                 self.pending_orders.setdefault(data['xrp_address'], []).append(order)
                 self.pending_orders[data['xrp_address']].sort(key=lambda x: x.sequence)
 
-                logger.info(f"Order placed in pending queue: {order.__dict__}")
-                return jsonify({"status": "success", "message": "Order placed in pending queue"})
+                self.process_pending_orders()  # Process pending orders after adding a new one
+                logger.info(f"Order placed and processed: {order.__dict__}")
+                return jsonify({"status": "success", "message": "Order placed and processed"})
 
             except Exception as e:
                 logger.error(f"Error processing order: {str(e)}", exc_info=True)
