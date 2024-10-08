@@ -2,7 +2,7 @@ import time
 from collections import defaultdict
 
 class Order:
-    def __init__(self, price, amount, order_type, xrp_address, public_key, signature, expiration=None, sequence=None, payment_tx_signature=None, multisig_destination=None):
+    def __init__(self, price, amount, order_type, xrp_address, public_key, signature, expiration=None, sequence=None, payment_tx_signature=None, multisig_destination=None, last_ledger_sequence=None):
         self.price = price
         self.amount = amount
         self.order_type = order_type
@@ -13,6 +13,7 @@ class Order:
         self.sequence = sequence
         self.payment_tx_signature = payment_tx_signature
         self.multisig_destination = multisig_destination
+        self.last_ledger_sequence = last_ledger_sequence
 
 class OrderBook:
     def __init__(self):

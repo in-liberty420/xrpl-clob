@@ -10,7 +10,6 @@ from xrpl.transaction import submit_and_wait
 class XRPLIntegration:
     def __init__(self):
         self.client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
-        self.client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
 
     def create_wallet(self):
         return generate_faucet_wallet(self.client)
@@ -44,5 +43,12 @@ class XRPLIntegration:
         )
 
     def submit_transaction(self, signed_transaction):
+        if hasattr(signed_transaction, 'last_ledger_sequence') and signed_transaction.last_ledger_sequence is not None:
+            current_ledger = self.get_current_ledger_sequence()
+            if signed_transaction.last_ledger_sequence <= current_ledger:
+                raise ValueError("Transaction has expired (LastLedgerSequence has passed)")
         return submit_and_wait(signed_transaction, self.client)
+
+    def get_current_ledger_sequence(self):
+        return self.client.request('ledger_current')['ledger_current_index']
 

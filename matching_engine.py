@@ -70,15 +70,21 @@ class MatchingEngine:
         # Pro-rata matching for asks
         matched_orders.extend(self.pro_rata_match(supply, clearing_price, max_volume, total_supply, lambda p: p <= clearing_price))
 
+        current_ledger = self.xrpl_integration.get_current_ledger_sequence()
+        valid_orders = [
+            (order, filled_amount) for order, filled_amount in matched_orders 
+            if order.last_ledger_sequence is None or order.last_ledger_sequence > current_ledger
+        ]
+
         # Update order amounts after matching
-        for order, filled_amount in matched_orders:
+        for order, filled_amount in valid_orders:
             order.matched_amount = filled_amount
             order.amount -= filled_amount
 
         # Process settlement
-        if self.settlement.process_matched_orders([order for order, _ in matched_orders]):
+        if self.settlement.process_matched_orders([order for order, _ in valid_orders]):
             # Remove fully filled orders and update partially filled orders
-            self.update_order_book(matched_orders)
+            self.update_order_book(valid_orders)
         else:
             # If settlement failed, we need to invalidate this auction
             print("Settlement failed. Invalidating this auction.")
