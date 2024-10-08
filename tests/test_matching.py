@@ -1,15 +1,23 @@
 import pytest
 import time
+from unittest.mock import Mock
 from matching_engine import MatchingEngine
 from order_book import OrderBook, Order
+from xrpl_integration import XRPLIntegration
 
 @pytest.fixture
 def order_book():
     return OrderBook()
 
 @pytest.fixture
-def matching_engine(order_book):
-    return MatchingEngine(order_book, batch_interval=1)  # Use a shorter interval for testing
+def mock_xrpl_integration():
+    mock = Mock(spec=XRPLIntegration)
+    mock.get_account_sequence.return_value = 1  # Default sequence number
+    return mock
+
+@pytest.fixture
+def matching_engine(order_book, mock_xrpl_integration):
+    return MatchingEngine(order_book, mock_xrpl_integration, batch_interval=1)  # Use a shorter interval for testing
 
 def create_order(price, amount, order_type, order_id=None):
     return Order(price, amount, order_type, f"address_{order_id}", f"pubkey_{order_id}", f"sig_{order_id}", int(time.time()) + 300)
