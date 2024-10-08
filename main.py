@@ -8,7 +8,12 @@ def main():
     order_book = OrderBook()
     xrpl_integration = XRPLIntegration()
     multisig_wallet = MultisigWallet()
-    multisig_wallet.load_wallet()  # Assuming the wallet is already created and stored
+    
+    if os.path.exists("encrypted_wallet.key"):
+        multisig_wallet.load_wallet()
+    else:
+        multisig_wallet.create_wallet()
+    
     matching_engine = MatchingEngine(order_book, xrpl_integration, multisig_wallet)
     api = API(order_book, matching_engine, xrpl_integration)
     

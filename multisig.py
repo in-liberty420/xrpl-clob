@@ -10,18 +10,30 @@ class MultisigWallet:
     def __init__(self):
         self.client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
         self.wallet = None
-        self.key = None
+        self.key = self.load_key()
+
+    def load_key(self):
+        try:
+            with open("encryption_key.key", "rb") as key_file:
+                return key_file.read()
+        except FileNotFoundError:
+            return None
 
     def create_wallet(self):
         self.wallet = Wallet.create()
+        self.key = Fernet.generate_key()
+        self.save_key()
         self.encrypt_and_store_keys()
         return self.wallet.classic_address
+
+    def save_key(self):
+        with open("encryption_key.key", "wb") as key_file:
+            key_file.write(self.key)
 
     def encrypt_and_store_keys(self):
         if not self.wallet:
             raise ValueError("Wallet not created yet")
         
-        self.key = Fernet.generate_key()
         f = Fernet(self.key)
         encrypted_seed = f.encrypt(self.wallet.seed.encode())
         
@@ -31,6 +43,9 @@ class MultisigWallet:
     def load_wallet(self):
         if not os.path.exists("encrypted_wallet.key"):
             raise FileNotFoundError("Encrypted wallet file not found")
+        
+        if self.key is None:
+            raise ValueError("Encryption key not found. Please create a wallet first.")
         
         with open("encrypted_wallet.key", "rb") as file:
             encrypted_seed = file.read()
