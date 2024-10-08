@@ -70,12 +70,9 @@ class MatchingEngine:
 
         for order in matched_orders:
             current_sequence = self.xrpl_integration.get_account_sequence(order.xrp_address)
-            if order.sequence == current_sequence:
-                # Execute the trade on XRPL
+            if order.sequence >= current_sequence:
+                # The order is still valid, we can proceed with the trade
                 # TODO: Implement XRPL transaction submission
-                pass
-            elif order.sequence > current_sequence:
-                # Keep the order in the pending queue
                 pass
             else:
                 # Remove the order as it's no longer valid
