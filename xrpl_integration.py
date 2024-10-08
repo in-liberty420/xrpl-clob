@@ -40,7 +40,7 @@ class XRPLIntegration:
         # Prepare the transaction data for signing
         tx_json = {
             "Account": xrp_address,
-            "Amount": str(amount_drops),  # Convert to string
+            "Amount": str(amount_drops),
             "Destination": multisig_destination,
             "TransactionType": "Payment",
             "Sequence": sequence
@@ -50,14 +50,8 @@ class XRPLIntegration:
         encoded_tx = encode_for_signing(tx_json)
         
         try:
-            # Ensure the signature is in the correct format
-            logger.debug(f"Payment signature before fromhex: {payment_tx_signature}")
-            logger.debug(f"Payment signature type: {type(payment_tx_signature)}")
-            logger.debug(f"Is hex: {all(c in '0123456789ABCDEFabcdef' for c in payment_tx_signature)}")
-            
-            # Try to decode the signature
-            signature_bytes = bytes.fromhex(payment_tx_signature.strip())
-            logger.debug(f"Payment signature after fromhex: {signature_bytes.hex()}")
+            # The signature is already in hex format, so we just need to convert it to bytes
+            signature_bytes = bytes.fromhex(payment_tx_signature)
             
             # Verify the signature
             is_valid = keypairs.is_valid_message(encoded_tx, signature_bytes, xrp_address)
