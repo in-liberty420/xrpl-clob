@@ -49,22 +49,17 @@ class XRPLIntegration:
                 "TransactionType": "Payment",
                 "Sequence": sequence,
                 "SigningPubKey": public_key,
-                "TxnSignature": payment_tx_signature
             }
             logger.debug(f"Original transaction JSON: {json.dumps(tx_json, indent=2)}")
 
-            # Step 2: Remove TxnSignature and Signers fields
-            tx_json_unsigned = {k: v for k, v in tx_json.items() if k not in ['TxnSignature', 'Signers']}
-            logger.debug(f"Unsigned transaction JSON: {json.dumps(tx_json_unsigned, indent=2)}")
-
-            # Step 3: Serialize the Transaction
-            serialized_txn = encode_for_signing(tx_json_unsigned)
+            # Step 2: Serialize the Transaction
+            serialized_txn = encode_for_signing(tx_json)
             logger.debug(f"Serialized transaction: {serialized_txn.hex()}")
 
-            # Step 4: Verify the Signature
+            # Step 3: Verify the Signature
             is_valid = keypairs.verify(
                 message=serialized_txn,
-                signature=payment_tx_signature,
+                signature=bytes.fromhex(payment_tx_signature),
                 public_key=public_key
             )
 
