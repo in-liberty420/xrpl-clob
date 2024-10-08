@@ -4,8 +4,12 @@ from xrpl.models import AccountInfo
 from xrpl.wallet import generate_faucet_wallet
 from xrpl.transaction import submit_and_wait
 
+from xrpl.models import Payment
+from xrpl.transaction import submit_and_wait
+
 class XRPLIntegration:
     def __init__(self):
+        self.client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
         self.client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
 
     def create_wallet(self):

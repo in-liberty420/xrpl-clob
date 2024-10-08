@@ -52,6 +52,11 @@ class MultisigWallet:
         signed_tx = self.wallet.sign(payment)
         return signed_tx
 
+    def sign_transaction(self, transaction):
+        if not self.wallet:
+            raise ValueError("Wallet not loaded")
+        return self.wallet.sign(transaction)
+
     def get_address(self):
         if not self.wallet:
             raise ValueError("Wallet not created or loaded")
