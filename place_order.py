@@ -74,10 +74,13 @@ def place_order():
     
     # Sign the transaction
     signed_payment = sign(payment, wallet)
-    payment_tx_signature = signed_payment.txn_signature.hex()
-    logger.debug(f"Payment transaction signature type: {type(payment_tx_signature)}")
-    logger.debug(f"Payment transaction signature: {payment_tx_signature}")
-    logger.debug(f"Is hex: {all(c in '0123456789ABCDEFabcdef' for c in payment_tx_signature)}")
+    payment_tx_signature = signed_payment.txn_signature
+
+    # The signature is already a string, so we don't need to call .hex()
+    payment_tx_signature_hex = payment_tx_signature
+    logger.debug(f"Payment transaction signature type: {type(payment_tx_signature_hex)}")
+    logger.debug(f"Payment transaction signature: {payment_tx_signature_hex}")
+    logger.debug(f"Is hex: {all(c in '0123456789ABCDEFabcdef' for c in payment_tx_signature_hex)}")
 
     # Prepare payload
     payload = {
