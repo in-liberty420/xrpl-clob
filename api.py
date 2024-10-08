@@ -22,7 +22,7 @@ class API:
         def place_order():
             data = request.json
             logger.debug(f"Received full order data: {data}")
-            
+    
             try:
                 # Get the current sequence number
                 current_sequence = self.xrpl_integration.get_account_sequence(data['xrp_address'])
@@ -30,6 +30,10 @@ class API:
                 # Check if the provided sequence number is valid
                 if data['sequence'] < current_sequence:
                     return jsonify({"status": "error", "message": "Invalid sequence number"}), 400
+
+                # Check if multisig_destination is provided
+                if 'multisig_destination' not in data:
+                    return jsonify({"status": "error", "message": "Multisig destination is required"}), 400
 
                 order = Order(
                     price=data['price'],
@@ -41,13 +45,24 @@ class API:
                     expiration=data['expiration'],
                     sequence=data['sequence'],
                     payment_tx_signature=data.get('payment_tx_signature'),
-                    multisig_destination=data.get('multisig_destination'),
+                    multisig_destination=data['multisig_destination'],
                     last_ledger_sequence=data.get('last_ledger_sequence')
                 )
                 logger.debug(f"Created order object: {order.__dict__}")
         
                 # Verify the signature
-                message = json.dumps({k: data[k] for k in ['price', 'amount', 'order_type', 'expiration', 'sequence', 'multisig_destination', 'last_ledger_sequence']})
+                message_data = {
+                    'price': data['price'],
+                    'amount': data['amount'],
+                    'order_type': data['order_type'],
+                    'expiration': data['expiration'],
+                    'sequence': data['sequence'],
+                    'multisig_destination': data['multisig_destination']
+                }
+                if 'last_ledger_sequence' in data:
+                    message_data['last_ledger_sequence'] = data['last_ledger_sequence']
+        
+                message = json.dumps(message_data)
                 logger.debug(f"Message to verify: {message}")
                 logger.debug(f"Signature to verify: {order.signature}")
                 logger.debug(f"XRP address: {order.xrp_address}")
@@ -61,11 +76,10 @@ class API:
                         logger.warning(f"Invalid payment transaction signature for order: {order.__dict__}")
                         return jsonify({"status": "error", "message": "Invalid payment transaction signature"}), 400
 
-
                     # Store the order in a pending orders list, sorted by sequence number
                     self.pending_orders.setdefault(data['xrp_address'], []).append(order)
                     self.pending_orders[data['xrp_address']].sort(key=lambda x: x.sequence)
-            
+    
                     logger.info(f"Order placed in pending queue: {order.__dict__}")
                     return jsonify({"status": "success", "message": "Order placed in pending queue"})
                 else:

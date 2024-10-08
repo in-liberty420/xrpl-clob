@@ -26,13 +26,17 @@ def place_order():
     client = JsonRpcClient("https://s.altnet.rippletest.net:51234")
     current_sequence = client.request(AccountInfo(account=wallet.classic_address)).result['account_data']['Sequence']
 
+    # Multisig wallet address (replace with your actual multisig wallet address)
+    multisig_destination = "rMultisigWalletAddressHere"
+
     # Create order data
     order_data = {
         "price": 100.0,
         "amount": 10.0,
         "order_type": "buy",
         "expiration": int(time.time()) + 300,  # Unix time, 5 minutes from now
-        "sequence": current_sequence + 1  # Use the next sequence number
+        "sequence": current_sequence + 1,  # Use the next sequence number
+        "multisig_destination": multisig_destination
     }
     logger.debug(f"Order data: {order_data}")
     
