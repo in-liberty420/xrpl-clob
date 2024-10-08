@@ -41,12 +41,13 @@ class API:
                     expiration=data['expiration'],
                     sequence=data['sequence'],
                     payment_tx_signature=data.get('payment_tx_signature'),
-                    multisig_destination=data.get('multisig_destination')
+                    multisig_destination=data.get('multisig_destination'),
+                    last_ledger_sequence=data.get('last_ledger_sequence')
                 )
                 logger.debug(f"Created order object: {order.__dict__}")
         
                 # Verify the signature
-                message = json.dumps({k: data[k] for k in ['price', 'amount', 'order_type', 'expiration', 'sequence', 'multisig_destination']})
+                message = json.dumps({k: data[k] for k in ['price', 'amount', 'order_type', 'expiration', 'sequence', 'multisig_destination', 'last_ledger_sequence']})
                 logger.debug(f"Message to verify: {message}")
                 logger.debug(f"Signature to verify: {order.signature}")
                 logger.debug(f"XRP address: {order.xrp_address}")
