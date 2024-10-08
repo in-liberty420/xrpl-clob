@@ -26,7 +26,7 @@ def test_order_signature():
 
     # Sign the order
     message = json.dumps(order_data)
-    signature = keypairs.sign(message.encode(), wallet.private_key)
+    signature = bytes.fromhex(keypairs.sign(message.encode(), wallet.private_key))
 
     # Verify the signature
     is_valid = keypairs.is_valid_message(message.encode(), signature, wallet.public_key)
@@ -58,7 +58,7 @@ def test_payment_signature():
         "TransactionType": "Payment",
         "Sequence": 1,
         "SigningPubKey": wallet.public_key,
-        "TxnSignature": signed_payment.get_signature().hex()
+        "TxnSignature": signed_payment.txn_signature.hex()
     }
 
     print(f"Wallet address: {wallet.classic_address}")
