@@ -13,6 +13,7 @@ class API:
         self.order_book = order_book
         self.matching_engine = matching_engine
         self.xrpl_integration = xrpl_integration
+        self.pending_orders = {}
 
         self.setup_routes()
 
@@ -23,6 +24,13 @@ class API:
             logger.debug(f"Received full order data: {data}")
             
             try:
+                # Get the current sequence number
+                current_sequence = self.xrpl_integration.get_account_sequence(data['xrp_address'])
+
+                # Check if the provided sequence number is valid
+                if data['sequence'] < current_sequence:
+                    return jsonify({"status": "error", "message": "Invalid sequence number"}), 400
+
                 order = Order(
                     price=data['price'],
                     amount=data['amount'],
@@ -30,12 +38,13 @@ class API:
                     xrp_address=data['xrp_address'],
                     public_key=data['public_key'],
                     signature=data['signature'],
-                    expiration=data['expiration']
+                    expiration=data['expiration'],
+                    sequence=data['sequence']
                 )
                 logger.debug(f"Created order object: {order.__dict__}")
                 
                 # Verify the signature
-                message = json.dumps({k: data[k] for k in ['price', 'amount', 'order_type', 'expiration']})
+                message = json.dumps({k: data[k] for k in ['price', 'amount', 'order_type', 'expiration', 'sequence']})
                 logger.debug(f"Message to verify: {message}")
                 logger.debug(f"Signature to verify: {order.signature}")
                 logger.debug(f"XRP address: {order.xrp_address}")
@@ -44,10 +53,12 @@ class API:
                 logger.debug(f"Signature verification result: {verification_result}")
                 
                 if verification_result:
-                    self.order_book.add_order(order)
-                    self.matching_engine.run_batch_auction()
-                    logger.info(f"Order placed successfully: {order.__dict__}")
-                    return jsonify({"status": "success", "message": "Order placed successfully"})
+                    # Store the order in a pending orders list, sorted by sequence number
+                    self.pending_orders.setdefault(data['xrp_address'], []).append(order)
+                    self.pending_orders[data['xrp_address']].sort(key=lambda x: x.sequence)
+                    
+                    logger.info(f"Order placed in pending queue: {order.__dict__}")
+                    return jsonify({"status": "success", "message": "Order placed in pending queue"})
                 else:
                     logger.warning(f"Invalid order signature for order: {order.__dict__}")
                     return jsonify({"status": "error", "message": "Invalid order signature"}), 400

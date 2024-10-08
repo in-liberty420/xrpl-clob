@@ -2,8 +2,9 @@ import time
 from collections import defaultdict
 
 class MatchingEngine:
-    def __init__(self, order_book, batch_interval=5):  # 5 seconds batch interval
+    def __init__(self, order_book, xrpl_integration, batch_interval=5):  # 5 seconds batch interval
         self.order_book = order_book
+        self.xrpl_integration = xrpl_integration
         self.batch_interval = batch_interval
         self.last_batch_time = int(time.time())
         self.last_clearing_price = None
@@ -59,11 +60,26 @@ class MatchingEngine:
         total_demand = sum(sum(order.amount for order in demand[p]) for p in demand if p >= clearing_price)
         total_supply = sum(sum(order.amount for order in supply[p]) for p in supply if p <= clearing_price)
 
+        matched_orders = []
+
         # Pro-rata matching for bids
-        self.pro_rata_match(demand, clearing_price, max_volume, total_demand, lambda p: p >= clearing_price)
+        matched_orders.extend(self.pro_rata_match(demand, clearing_price, max_volume, total_demand, lambda p: p >= clearing_price))
 
         # Pro-rata matching for asks
-        self.pro_rata_match(supply, clearing_price, max_volume, total_supply, lambda p: p <= clearing_price)
+        matched_orders.extend(self.pro_rata_match(supply, clearing_price, max_volume, total_supply, lambda p: p <= clearing_price))
+
+        for order in matched_orders:
+            current_sequence = self.xrpl_integration.get_account_sequence(order.xrp_address)
+            if order.sequence == current_sequence:
+                # Execute the trade on XRPL
+                # TODO: Implement XRPL transaction submission
+                pass
+            elif order.sequence > current_sequence:
+                # Keep the order in the pending queue
+                pass
+            else:
+                # Remove the order as it's no longer valid
+                self.order_book.remove_order(order)
 
         # Remove fully filled orders
         self.remove_filled_orders()

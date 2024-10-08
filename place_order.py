@@ -17,12 +17,16 @@ def place_order():
     wallet = generate_faucet_wallet(client)
     logger.debug(f"Generated wallet with address: {wallet.classic_address}")
     
+    # Get the current sequence number
+    current_sequence = client.request(AccountInfo(account=wallet.classic_address)).result['account_data']['Sequence']
+
     # Create order data
     order_data = {
         "price": 100.0,
         "amount": 10.0,
         "order_type": "buy",
-        "expiration": int(time.time()) + 300  # Unix time, 5 minutes from now
+        "expiration": int(time.time()) + 300,  # Unix time, 5 minutes from now
+        "sequence": current_sequence + 1  # Use the next sequence number
     }
     logger.debug(f"Order data: {order_data}")
     
@@ -30,7 +34,7 @@ def place_order():
     message = json.dumps(order_data)
     signature = keypairs.sign(message.encode(), wallet.private_key)
     logger.debug(f"Message to sign: {message}")
-    logger.debug(f"Signature: {signature}")  # Remove .hex() call
+    logger.debug(f"Signature: {signature}")
     logger.debug(f"Public key: {wallet.public_key}")
 
     # Prepare payload
@@ -38,7 +42,7 @@ def place_order():
         **order_data,
         "xrp_address": wallet.classic_address,
         "public_key": wallet.public_key,
-        "signature": signature  # Send as is, it's already a string
+        "signature": signature
     }
     logger.debug(f"Payload: {payload}")
     
