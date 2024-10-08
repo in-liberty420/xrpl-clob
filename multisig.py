@@ -39,7 +39,7 @@ class MultisigWallet:
         decrypted_seed = f.decrypt(encrypted_seed).decode()
         self.wallet = Wallet.from_seed(decrypted_seed)
 
-    def sign_and_submit_transaction(self, destination, amount):
+    def create_and_sign_transaction(self, destination, amount):
         if not self.wallet:
             raise ValueError("Wallet not loaded")
         
@@ -49,8 +49,8 @@ class MultisigWallet:
             destination=destination
         )
         
-        response = safe_sign_and_submit_transaction(payment, self.wallet, self.client)
-        return response
+        signed_tx = self.wallet.sign(payment)
+        return signed_tx
 
     def get_address(self):
         if not self.wallet:
