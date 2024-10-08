@@ -65,6 +65,12 @@ def test_payment_signature():
         "TxnSignature": signed_payment.txn_signature  # Remove .hex()
     }
 
+    print(f"Length of signed_payment.txn_signature: {len(signed_payment.txn_signature)}")
+    print(f"Full value of signed_payment.txn_signature: {signed_payment.txn_signature}")
+
+    print(f"Length of tx_json['TxnSignature']: {len(tx_json['TxnSignature'])}")
+    print(f"Full value of tx_json['TxnSignature']: {tx_json['TxnSignature']}")
+
     print(f"Wallet address: {wallet.classic_address}")
     print(f"Wallet public key: {wallet.public_key}")
     print(f"Payment signature: {tx_json['TxnSignature']}")
