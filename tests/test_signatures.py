@@ -43,7 +43,15 @@ def test_payment_signature():
 
     # Sign the payment
     signed_payment = sign(payment, wallet)
-    payment_tx_signature = signed_payment.txn_signature.hex()
+    payment_tx_signature = signed_payment.txn_signature
+    
+    # Ensure payment_tx_signature is a hex string
+    if isinstance(payment_tx_signature, bytes):
+        payment_tx_signature = payment_tx_signature.hex()
+    elif isinstance(payment_tx_signature, str):
+        # If it's already a string, ensure it's a valid hex string
+        if not all(c in '0123456789ABCDEFabcdef' for c in payment_tx_signature):
+            raise ValueError("Invalid hex string in txn_signature")
 
     # Verify the payment signature
     is_valid = xrpl_integration.verify_payment_signature(
