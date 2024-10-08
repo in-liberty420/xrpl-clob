@@ -10,13 +10,20 @@ def main():
     xrpl_integration = XRPLIntegration()
     multisig_wallet = MultisigWallet()
     
-    try:
-        multisig_wallet.load_wallet()
-        print("Existing wallet loaded successfully.")
-    except (FileNotFoundError, ValueError):
-        print("Creating new wallet...")
-        multisig_wallet.create_wallet()
-        print("New wallet created successfully.")
+    if os.path.exists("encrypted_wallet.key"):
+        try:
+            multisig_wallet.load_wallet()
+            print("Existing wallet loaded successfully.")
+        except ValueError as e:
+            print(f"Error loading wallet: {str(e)}")
+            return
+    else:
+        try:
+            multisig_wallet.create_wallet()
+            print("New wallet created successfully.")
+        except ValueError as e:
+            print(f"Error creating wallet: {str(e)}")
+            return
     
     matching_engine = MatchingEngine(order_book, xrpl_integration, multisig_wallet)
     api = API(order_book, matching_engine, xrpl_integration)
