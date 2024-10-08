@@ -100,6 +100,7 @@ class MatchingEngine:
 
     def pro_rata_match(self, orders, clearing_price, max_volume, total_eligible_volume, price_condition):
         eligible_orders = [order for price, order_list in orders.items() if price_condition(price) for order in order_list]
+        matched_orders = []
         
         for order in eligible_orders:
             if total_eligible_volume > 0:
@@ -108,7 +109,10 @@ class MatchingEngine:
                 order.amount -= filled_amount
                 max_volume -= filled_amount
                 total_eligible_volume -= filled_amount
+                matched_orders.append(order)
             # Here you would typically record the trade or notify the user
+        
+        return matched_orders
 
     def clean_order_book(self):
         current_time = int(time.time())
