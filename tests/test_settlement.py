@@ -21,18 +21,19 @@ def mock_multisig_wallet():
 def settlement(mock_xrpl_integration, mock_multisig_wallet):
     return Settlement(mock_xrpl_integration, mock_multisig_wallet)
 
-def create_mock_order(order_type, price, amount, address="rUserAddress"):
+def create_mock_order(order_type, price, amount, matched_amount=None, address="rUserAddress"):
     order = Mock(spec=Order)
     order.order_type = order_type
     order.price = price
     order.amount = amount
+    order.matched_amount = matched_amount if matched_amount is not None else amount
     order.xrp_address = address
     order.payment_tx_signature = "mock_payment_signature"
     return order
 
 def test_process_matched_orders_success(settlement):
-    buy_order = create_mock_order("buy", 100, 10)
-    sell_order = create_mock_order("sell", 100, 10)
+    buy_order = create_mock_order("buy", 100, 10, matched_amount=8)
+    sell_order = create_mock_order("sell", 100, 10, matched_amount=8)
     
     with patch.object(Settlement, 'execute_order', return_value=True) as mock_execute:
         result = settlement.process_matched_orders([buy_order, sell_order])
@@ -41,8 +42,8 @@ def test_process_matched_orders_success(settlement):
     assert mock_execute.call_count == 2
 
 def test_process_matched_orders_failure(settlement):
-    buy_order = create_mock_order("buy", 100, 10)
-    sell_order = create_mock_order("sell", 100, 10)
+    buy_order = create_mock_order("buy", 100, 10, matched_amount=8)
+    sell_order = create_mock_order("sell", 100, 10, matched_amount=8)
     
     with patch.object(Settlement, 'execute_order', side_effect=[True, False]) as mock_execute:
         result = settlement.process_matched_orders([buy_order, sell_order])
@@ -51,7 +52,7 @@ def test_process_matched_orders_failure(settlement):
     assert mock_execute.call_count == 2
 
 def test_execute_order_buy(settlement, mock_xrpl_integration, mock_multisig_wallet):
-    buy_order = create_mock_order("buy", 100, 10)
+    buy_order = create_mock_order("buy", 100, 10, matched_amount=8)  # Partial fill
     mock_xrpl_integration.create_payment_transaction.return_value = "mock_payout_tx"
     
     with patch.object(Settlement, 'submit_transaction', side_effect=[True, True]) as mock_submit:
@@ -61,11 +62,11 @@ def test_execute_order_buy(settlement, mock_xrpl_integration, mock_multisig_wall
     mock_submit.assert_any_call(buy_order.payment_tx_signature, "Full payment for buy order")
     mock_submit.assert_any_call("mock_payout_tx", "Payout for buy order")
     mock_xrpl_integration.create_payment_transaction.assert_called_once_with(
-        mock_multisig_wallet.get_address(), buy_order.xrp_address, 10
+        mock_multisig_wallet.get_address(), buy_order.xrp_address, 8  # Use matched_amount
     )
 
 def test_execute_order_sell(settlement, mock_xrpl_integration, mock_multisig_wallet):
-    sell_order = create_mock_order("sell", 100, 10)
+    sell_order = create_mock_order("sell", 100, 10, matched_amount=7)  # Partial fill
     mock_xrpl_integration.create_payment_transaction.return_value = "mock_payout_tx"
     
     with patch.object(Settlement, 'submit_transaction', side_effect=[True, True]) as mock_submit:
@@ -75,7 +76,7 @@ def test_execute_order_sell(settlement, mock_xrpl_integration, mock_multisig_wal
     mock_submit.assert_any_call(sell_order.payment_tx_signature, "Full payment for sell order")
     mock_submit.assert_any_call("mock_payout_tx", "Payout for sell order")
     mock_xrpl_integration.create_payment_transaction.assert_called_once_with(
-        mock_multisig_wallet.get_address(), sell_order.xrp_address, 1000  # 10 * 100
+        mock_multisig_wallet.get_address(), sell_order.xrp_address, 700  # 7 * 100
     )
 
 def test_submit_transaction_success(settlement, mock_xrpl_integration):
