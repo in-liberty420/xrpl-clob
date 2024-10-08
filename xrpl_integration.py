@@ -1,3 +1,4 @@
+import logging
 from xrpl.clients import JsonRpcClient
 from xrpl.models.transactions import Payment
 from xrpl.models import AccountInfo
@@ -7,6 +8,8 @@ from xrpl.core import keypairs
 from xrpl.account import get_next_valid_seq_number
 from xrpl.ledger import get_fee
 from xrpl.core.binarycodec import encode_for_signing
+
+logger = logging.getLogger(__name__)
 
 class XRPLIntegration:
     def __init__(self):
