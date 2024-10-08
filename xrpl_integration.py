@@ -35,6 +35,7 @@ class XRPLIntegration:
 
     def verify_payment_signature(self, payment_tx_signature, xrp_address, multisig_destination, amount_drops, sequence):
         if payment_tx_signature is None:
+            logger.error("Payment signature is None")
             return False
         
         # Prepare the transaction data for signing
@@ -50,6 +51,10 @@ class XRPLIntegration:
         encoded_tx = encode_for_signing(tx_json)
         
         try:
+            # Ensure the signature is a valid hex string
+            if not all(c in '0123456789ABCDEFabcdef' for c in payment_tx_signature):
+                raise ValueError("Invalid hex string")
+            
             # Convert the hex string back to bytes
             signature_bytes = bytes.fromhex(payment_tx_signature)
             
