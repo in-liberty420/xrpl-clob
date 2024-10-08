@@ -60,12 +60,12 @@ def place_order():
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
 
-    # Check the order book
-    order_book_url = "http://127.0.0.1:5000/order_book"
-    order_book_response = requests.get(order_book_url)
-    logger.debug("\nOrder book:")
-    logger.debug(f"Status Code: {order_book_response.status_code}")
-    logger.debug(f"Response Content: {order_book_response.text}")
+    # Check the L2 order book
+    l2_order_book_url = "http://127.0.0.1:5000/l2_order_book"
+    l2_order_book_response = requests.get(l2_order_book_url)
+    logger.debug("\nL2 Order book:")
+    logger.debug(f"Status Code: {l2_order_book_response.status_code}")
+    logger.debug(f"Response Content: {l2_order_book_response.text}")
 
 if __name__ == "__main__":
     place_order()

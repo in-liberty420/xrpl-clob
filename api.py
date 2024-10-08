@@ -75,11 +75,11 @@ class API:
                 logger.error(f"Error processing order: {str(e)}", exc_info=True)
                 return jsonify({"status": "error", "message": str(e)}), 400
 
-        @self.app.route('/order_book', methods=['GET'])
-        def get_order_book():
+        @self.app.route('/l2_order_book', methods=['GET'])
+        def get_l2_order_book():
             self.order_book.clean_expired_orders()
-            book = self.order_book.get_order_book()
-            logger.debug(f"Current order book: {book}")
+            book = self.order_book.get_l2_order_book()
+            logger.debug(f"Current L2 order book: {book}")
             return jsonify(book)
 
     def run(self):

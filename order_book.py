@@ -39,7 +39,7 @@ class OrderBook:
                 del self.asks[order.price]
         del self.order_map[order.signature]
 
-    def get_order_book(self):
+    def get_l2_order_book(self):
         current_time = int(time.time())
         return {
             "bids": [(price, sum(order.amount for order in orders if order.expiration > current_time))
