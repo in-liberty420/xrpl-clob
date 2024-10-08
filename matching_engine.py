@@ -99,10 +99,10 @@ class MatchingEngine:
         for order in eligible_orders:
             if total_eligible_volume > 0:
                 fill_ratio = min(1, executed_volume / total_eligible_volume)
-                filled_amount = order.amount * fill_ratio
+                filled_amount = min(order.amount, order.amount * fill_ratio)
                 order.amount -= filled_amount
                 executed_volume -= filled_amount
-                total_eligible_volume -= order.amount
+                total_eligible_volume -= filled_amount
             # Here you would typically record the trade or notify the user
 
     def clean_order_book(self):
