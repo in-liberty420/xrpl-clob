@@ -42,7 +42,7 @@ class XRPLIntegration:
             return False
         
         try:
-            # Step 1: Prepare the Transaction JSON
+            # Prepare the Transaction JSON
             tx_json = {
                 "Account": keypairs.derive_classic_address(public_key),
                 "Amount": str(amount_drops),
@@ -53,13 +53,15 @@ class XRPLIntegration:
             }
             logger.debug(f"Original transaction JSON: {json.dumps(tx_json, indent=2)}")
 
-            # Step 2: Serialize the Transaction using encode_for_signing
-            serialized_txn = encode_for_signing(tx_json)
-            logger.debug(f"Serialized transaction: {serialized_txn.hex()}")
+            # Serialize the Transaction using encode_for_signing
+            signing_data = encode_for_signing(tx_json)
+            
+            # Convert the hex string to bytes
+            signing_data_bytes = bytes.fromhex(signing_data)
 
-            # Step 3: Verify the Signature
+            # Verify the Signature
             is_valid = keypairs.is_valid_message(
-                message=serialized_txn,
+                message=signing_data_bytes,
                 signature=bytes.fromhex(payment_tx_signature),
                 public_key=public_key
             )
