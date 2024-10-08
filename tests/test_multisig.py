@@ -49,18 +49,14 @@ class TestMultisigWallet(unittest.TestCase):
                     mock_from_seed.assert_called_once_with(mock_decrypted_seed)
                     self.assertEqual(self.wallet.wallet, mock_wallet)
 
-    def test_sign_and_submit_transaction(self):
+    def test_create_and_sign_transaction(self):
         self.wallet.wallet = MagicMock()
-        self.wallet.client = MagicMock()
+        self.wallet.wallet.sign = MagicMock(return_value="signed_transaction")
 
-        with patch('xrpl.transaction.safe_sign_and_submit_transaction') as mock_submit:
-            mock_response = MagicMock()
-            mock_submit.return_value = mock_response
+        signed_tx = self.wallet.create_and_sign_transaction('rDestination123', 100)
 
-            response = self.wallet.sign_and_submit_transaction('rDestination123', 100)
-
-            mock_submit.assert_called_once()
-            self.assertEqual(response, mock_response)
+        self.wallet.wallet.sign.assert_called_once()
+        self.assertEqual(signed_tx, "signed_transaction")
 
     def test_get_address(self):
         self.wallet.wallet = MagicMock()
