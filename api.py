@@ -39,24 +39,38 @@ class API:
                     public_key=data['public_key'],
                     signature=data['signature'],
                     expiration=data['expiration'],
-                    sequence=data['sequence']
+                    sequence=data['sequence'],
+                    payment_tx_signature=data.get('payment_tx_signature'),
+                    multisig_destination=data.get('multisig_destination'),
+                    additional_info_signature=data.get('additional_info_signature')
                 )
                 logger.debug(f"Created order object: {order.__dict__}")
-                
+        
                 # Verify the signature
-                message = json.dumps({k: data[k] for k in ['price', 'amount', 'order_type', 'expiration', 'sequence']})
+                message = json.dumps({k: data[k] for k in ['price', 'amount', 'order_type', 'expiration', 'sequence', 'multisig_destination']})
                 logger.debug(f"Message to verify: {message}")
                 logger.debug(f"Signature to verify: {order.signature}")
                 logger.debug(f"XRP address: {order.xrp_address}")
-                
+        
                 verification_result = verify_order_signature(order, message)
                 logger.debug(f"Signature verification result: {verification_result}")
-                
+        
                 if verification_result:
+                    # Verify payment transaction signature
+                    if not self.xrpl_integration.verify_payment_signature(order.payment_tx_signature, order.xrp_address, order.multisig_destination, order.amount):
+                        logger.warning(f"Invalid payment transaction signature for order: {order.__dict__}")
+                        return jsonify({"status": "error", "message": "Invalid payment transaction signature"}), 400
+
+                    # Verify additional info signature if provided
+                    if order.additional_info_signature:
+                        if not self.xrpl_integration.verify_additional_info_signature(order.additional_info_signature, order.xrp_address, message):
+                            logger.warning(f"Invalid additional info signature for order: {order.__dict__}")
+                            return jsonify({"status": "error", "message": "Invalid additional info signature"}), 400
+
                     # Store the order in a pending orders list, sorted by sequence number
                     self.pending_orders.setdefault(data['xrp_address'], []).append(order)
                     self.pending_orders[data['xrp_address']].sort(key=lambda x: x.sequence)
-                    
+            
                     logger.info(f"Order placed in pending queue: {order.__dict__}")
                     return jsonify({"status": "success", "message": "Order placed in pending queue"})
                 else:

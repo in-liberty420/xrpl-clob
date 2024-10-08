@@ -25,3 +25,15 @@ class XRPLIntegration:
         request = AccountInfo(account=address)
         response = self.client.request(request)
         return response.result['account_data']['Sequence']
+
+    def verify_payment_signature(self, payment_tx_signature, xrp_address, multisig_destination, amount):
+        # Implement the logic to verify the payment transaction signature
+        # This will depend on how you're constructing and signing the payment transaction
+        # Return True if the signature is valid, False otherwise
+        pass
+
+    def verify_additional_info_signature(self, additional_info_signature, xrp_address, message):
+        # Implement the logic to verify the additional info signature
+        # This will depend on what additional information you're including and how it's signed
+        # Return True if the signature is valid, False otherwise
+        pass

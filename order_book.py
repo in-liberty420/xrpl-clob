@@ -2,7 +2,7 @@ import time
 from collections import defaultdict
 
 class Order:
-    def __init__(self, price, amount, order_type, xrp_address, public_key, signature, expiration=None, sequence=None):
+    def __init__(self, price, amount, order_type, xrp_address, public_key, signature, expiration=None, sequence=None, payment_tx_signature=None, multisig_destination=None, additional_info_signature=None):
         self.price = price
         self.amount = amount
         self.order_type = order_type
@@ -11,6 +11,9 @@ class Order:
         self.signature = signature
         self.expiration = expiration if expiration is not None else int(time.time()) + 300  # Unix time, 5 minutes from now
         self.sequence = sequence
+        self.payment_tx_signature = payment_tx_signature
+        self.multisig_destination = multisig_destination
+        self.additional_info_signature = additional_info_signature
 
 class OrderBook:
     def __init__(self):
