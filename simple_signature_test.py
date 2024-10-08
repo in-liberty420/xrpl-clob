@@ -53,11 +53,6 @@ async def main():
         )
 
         print(f"Signature valid: {is_valid}")
-
-        # As an additional check, let's verify using the built-in verify method
-        is_valid_builtin = signed_tx.verify()
-
-        print(f"Signature valid (using built-in verify): {is_valid_builtin}")
     finally:
         # AsyncJsonRpcClient doesn't have a close method, so we'll remove this line
         pass
