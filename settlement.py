@@ -34,11 +34,15 @@ class Settlement:
         try:
             result = self.xrpl_integration.submit_transaction(transaction)
             if result.is_successful():
-                logger.info(f"{description} transaction submitted successfully: {result.result['hash']}")
+                hash_value = result.result.get('hash', 'Unknown')
+                logger.info(f"{description} transaction submitted successfully: {hash_value}")
                 return True
             else:
                 logger.error(f"{description} transaction failed: {result.result}")
                 return False
+        except AttributeError as e:
+            logger.error(f"Error accessing result attributes: {e}")
+            return False
         except XRPLReliableSubmissionException as e:
             logger.error(f"Error submitting {description} transaction: {e}")
             return False

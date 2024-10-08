@@ -14,6 +14,8 @@ def order_book():
 def mock_xrpl_integration():
     mock = Mock(spec=XRPLIntegration)
     mock.get_account_sequence.return_value = 1  # Default sequence number
+    mock.submit_transaction.return_value.is_successful.return_value = True
+    mock.submit_transaction.return_value.result = {'hash': 'mock_hash'}
     return mock
 
 @pytest.fixture

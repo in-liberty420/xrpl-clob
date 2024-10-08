@@ -6,7 +6,10 @@ from xrpl.transaction import XRPLReliableSubmissionException
 
 @pytest.fixture
 def mock_xrpl_integration():
-    return Mock()
+    mock = Mock()
+    mock.submit_transaction.return_value.is_successful.return_value = True
+    mock.submit_transaction.return_value.result = {'hash': 'mock_hash'}
+    return mock
 
 @pytest.fixture
 def mock_multisig_wallet():
