@@ -70,10 +70,15 @@ class MatchingEngine:
         # Pro-rata matching for asks
         matched_orders.extend(self.pro_rata_match(supply, clearing_price, max_volume, total_supply, lambda p: p <= clearing_price))
 
+        # Update order amounts after matching
+        for order in matched_orders:
+            order.matched_amount = order.amount
+            order.amount -= order.matched_amount
+
         # Process settlement
         if self.settlement.process_matched_orders(matched_orders):
-            # Remove fully filled orders
-            self.remove_filled_orders()
+            # Remove fully filled orders and update partially filled orders
+            self.update_order_book(matched_orders)
         else:
             # If settlement failed, we need to invalidate this auction
             print("Settlement failed. Invalidating this auction.")
@@ -81,6 +86,16 @@ class MatchingEngine:
 
         # Clean expired orders
         self.clean_order_book()
+
+    def update_order_book(self, matched_orders):
+        for order in matched_orders:
+            if order.amount == 0:
+                self.order_book.remove_order(order)
+            else:
+                # Update the order in the order book with the new amount
+                existing_order = self.order_book.order_map.get(order.signature)
+                if existing_order:
+                    existing_order.amount = order.amount
 
     def remove_filled_orders(self):
         for price in list(self.order_book.bids.keys()):
