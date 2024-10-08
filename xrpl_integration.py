@@ -39,46 +39,39 @@ class XRPLIntegration:
             logger.error("Payment signature is None")
             return False
         
-        # Prepare the transaction data for signing
-        tx_json = {
-            "Account": keypairs.derive_classic_address(public_key),
-            "Amount": str(amount_drops),
-            "Destination": multisig_destination,
-            "TransactionType": "Payment",
-            "Sequence": sequence,
-            "SigningPubKey": public_key,
-            "TxnSignature": payment_tx_signature
-        }
-        
         try:
             # Step 1: Prepare the Transaction JSON
-            tx_json_unsigned = copy.deepcopy(tx_json)
-            tx_json_unsigned.pop('TxnSignature', None)
-            tx_json_unsigned.pop('Signers', None)
+            tx_json = {
+                "Account": keypairs.derive_classic_address(public_key),
+                "Amount": str(amount_drops),
+                "Destination": multisig_destination,
+                "TransactionType": "Payment",
+                "Sequence": sequence,
+                "SigningPubKey": public_key,
+                "TxnSignature": payment_tx_signature
+            }
+            logger.debug(f"Original transaction JSON: {json.dumps(tx_json, indent=2)}")
 
-            # Step 2: Serialize the Transaction
+            # Step 2: Remove TxnSignature and Signers fields
+            tx_json_unsigned = {k: v for k, v in tx_json.items() if k not in ['TxnSignature', 'Signers']}
+            logger.debug(f"Unsigned transaction JSON: {json.dumps(tx_json_unsigned, indent=2)}")
+
+            # Step 3: Serialize the Transaction
             serialized_txn = encode_for_signing(tx_json_unsigned)
-
-            # Step 3: Retrieve the Signature and Public Key
-            txn_signature_hex = tx_json.get('TxnSignature')
-            signing_pub_key_hex = tx_json.get('SigningPubKey')
-
-            if txn_signature_hex is None or signing_pub_key_hex is None:
-                logger.error("Missing TxnSignature or SigningPubKey")
-                return False
+            logger.debug(f"Serialized transaction: {serialized_txn.hex()}")
 
             # Step 4: Verify the Signature
             is_valid = keypairs.verify(
                 message=serialized_txn,
-                signature=txn_signature_hex,
-                public_key=signing_pub_key_hex
+                signature=payment_tx_signature,
+                public_key=public_key
             )
 
             logger.debug(f"Signature verification result: {is_valid}")
             return is_valid
 
         except Exception as e:
-            logger.error(f"Error verifying payment signature: {e}")
+            logger.error(f"Error verifying payment signature: {str(e)}", exc_info=True)
             return False
 
     def create_payment_transaction(self, source, destination, amount):
