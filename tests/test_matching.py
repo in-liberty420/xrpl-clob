@@ -65,12 +65,14 @@ class TestMatchingEngine:
         matching_engine.order_book.add_order(create_order(101, 5, "buy", "1"))
         matching_engine.order_book.add_order(create_order(100, 5, "buy", "2"))
         matching_engine.order_book.add_order(create_order(99, 10, "sell", "3"))
-
+    
         matching_engine.match_orders()
-
+    
         assert 100 not in matching_engine.order_book.bids
         assert 101 not in matching_engine.order_book.bids
-        assert matching_engine.order_book.asks[99][0].amount == 0
+        assert 99 not in matching_engine.order_book.asks
+        assert len(matching_engine.order_book.bids) == 0
+        assert len(matching_engine.order_book.asks) == 0
 
     def test_no_match(self, matching_engine):
         matching_engine.order_book.add_order(create_order(98, 10, "buy", "1"))
