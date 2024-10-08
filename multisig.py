@@ -59,8 +59,7 @@ class MultisigWallet:
     def check_balance(self):
         if not self.wallet:
             raise ValueError("Wallet not created or loaded")
-        # Implement balance checking logic here
-        pass
+        return xrpl.account.get_balance(self.wallet.classic_address, self.client)
 
     def collect_fees(self, amount):
         # Placeholder for fee collection
