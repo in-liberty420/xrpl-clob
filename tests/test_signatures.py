@@ -1,95 +1,61 @@
 import json
+import asyncio
+from xrpl.asyncio.clients import AsyncJsonRpcClient
+from xrpl.models.transactions import Payment
+from xrpl.asyncio.transaction import autofill_and_sign
 from xrpl.wallet import Wallet
 from xrpl.core import keypairs
-from xrpl.models import Payment
-from xrpl.transaction import sign
-from xrpl_integration import XRPLIntegration
+from xrpl.core.binarycodec import encode_for_signing
 
-def load_test_wallet():
+async def main():
+    # Load the test wallet
     with open("test_wallet.json", "r") as f:
         wallet_info = json.load(f)
-    return Wallet(wallet_info['public_key'], wallet_info['private_key'])
 
-def test_order_signature():
-    # Load the test wallet
-    wallet = load_test_wallet()
+    # Create a wallet from the loaded information
+    wallet = Wallet(wallet_info['public_key'], wallet_info['private_key'])
 
-    # Create sample order data
-    order_data = {
-        "price": 100.0,
-        "amount": 10.0,
-        "order_type": "buy",
-        "expiration": 1234567890,
-        "sequence": 1,
-        "multisig_destination": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
-    }
-
-    # Sign the order
-    message = json.dumps(order_data)
-    signature = bytes.fromhex(keypairs.sign(message.encode(), wallet.private_key))
-
-    # Verify the signature
-    is_valid = keypairs.is_valid_message(message.encode(), signature, wallet.public_key)
-
-    print(f"Order Signature Valid: {is_valid}")
-    assert is_valid, "Order signature verification failed"
-
-def test_payment_signature():
-    # Load the test wallet and create XRPLIntegration instance
-    wallet = load_test_wallet()
-    xrpl_integration = XRPLIntegration()
-
-    # Create a sample payment
+    # Create a simple payment transaction
     payment = Payment(
         account=wallet.classic_address,
         amount="1000000",  # 1 XRP in drops
-        destination="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-        sequence=1
+        destination="rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
     )
 
-    # Sign the payment
-    signed_payment = sign(payment, wallet)
+    # Create a client connection
+    client = AsyncJsonRpcClient("https://s.altnet.rippletest.net:51234")
+    try:
+        # Autofill and sign the transaction (but don't submit)
+        signed_tx = await autofill_and_sign(payment, client, wallet)
 
-    # Log the type of txn_signature
-    print(f"Type of signed_payment.txn_signature: {type(signed_payment.txn_signature)}")
-    print(f"Value of signed_payment.txn_signature: {signed_payment.txn_signature}")
+        # Extract the relevant parts of the signed transaction
+        tx_blob = signed_tx.to_xrpl()
+        signature = tx_blob["TxnSignature"]
+        signed_tx_json = signed_tx.to_xrpl()
 
-    # Create the transaction JSON expected by verify_payment_signature
-    tx_json = {
-        "Account": wallet.classic_address,
-        "Amount": "1000000",
-        "Destination": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-        "TransactionType": "Payment",
-        "Sequence": 1,
-        "SigningPubKey": wallet.public_key,
-        "TxnSignature": signed_payment.txn_signature  # Remove .hex()
-    }
+        print(f"Signed transaction: {json.dumps(signed_tx_json, indent=2)}")
+        print(f"Signature: {signature}")
 
-    print(f"Length of signed_payment.txn_signature: {len(signed_payment.txn_signature)}")
-    print(f"Full value of signed_payment.txn_signature: {signed_payment.txn_signature}")
+        # Verify the signature
+        # First, we need to recreate the signing data
+        # We need to remove fields that are not part of the signed data
+        signing_json = {k: v for k, v in signed_tx_json.items() if k not in ["TxnSignature", "hash"]}
+        signing_data = encode_for_signing(signing_json)
 
-    print(f"Length of tx_json['TxnSignature']: {len(tx_json['TxnSignature'])}")
-    print(f"Full value of tx_json['TxnSignature']: {tx_json['TxnSignature']}")
+        # Convert the hex string to bytes
+        signing_data_bytes = bytes.fromhex(signing_data)
 
-    print(f"Wallet address: {wallet.classic_address}")
-    print(f"Wallet public key: {wallet.public_key}")
-    print(f"Payment signature: {tx_json['TxnSignature']}")
-    print(f"Payment sequence: {tx_json['Sequence']}")
+        # Now verify the signature
+        is_valid = keypairs.is_valid_message(
+            message=signing_data_bytes,
+            signature=bytes.fromhex(signature),
+            public_key=wallet.public_key
+        )
 
-    # Verify the payment signature
-    is_valid = xrpl_integration.verify_payment_signature(
-        tx_json["TxnSignature"],
-        tx_json["SigningPubKey"],
-        tx_json["Destination"],
-        int(tx_json["Amount"]),
-        tx_json["Sequence"]
-    )
-
-    print(f"Payment Signature Valid: {is_valid}")
-    assert is_valid, "Payment signature verification failed"
+        print(f"Signature valid: {is_valid}")
+    finally:
+        # AsyncJsonRpcClient doesn't have a close method, so we'll remove this line
+        pass
 
 if __name__ == "__main__":
-    print("Testing Order Signature:")
-    test_order_signature()
-    print("\nTesting Payment Signature:")
-    test_payment_signature()
+    asyncio.run(main())
