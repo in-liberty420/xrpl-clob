@@ -6,7 +6,7 @@ from settlement import Settlement
 logger = logging.getLogger(__name__)
 
 class MatchingEngine:
-    def __init__(self, order_book, xrpl_integration, multisig_wallet, batch_interval=5):  # 5 seconds batch interval
+    def __init__(self, order_book, xrpl_integration, multisig_wallet, batch_interval=15):  # 15 seconds batch interval
         self.order_book = order_book
         self.xrpl_integration = xrpl_integration
         self.batch_interval = batch_interval
