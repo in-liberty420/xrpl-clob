@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from order_book import Order, OrderBook
-from order_signing import verify_order_signature
-import json
+import time
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -14,6 +13,7 @@ class API:
         self.matching_engine = matching_engine
         self.xrpl_integration = xrpl_integration
         self.pending_orders = {}
+        self.last_matching_time = time.time()
 
         self.setup_routes()
         self.process_pending_orders()  # Process any existing pending orders on startup
@@ -88,4 +88,14 @@ class API:
             return jsonify(book)
 
     def run(self):
+        def run_matching_engine():
+            current_time = time.time()
+            if current_time - self.last_matching_time >= self.matching_engine.batch_interval:
+                self.matching_engine.run_batch_auction()
+                self.last_matching_time = current_time
+
+        @self.app.before_request
+        def before_request():
+            run_matching_engine()
+
         self.app.run(debug=True)
