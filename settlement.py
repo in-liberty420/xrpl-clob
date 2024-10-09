@@ -28,7 +28,7 @@ class Settlement:
 
         # Create and submit the payout transaction
         payout_tx = self.xrpl_integration.create_payment_transaction(
-            self.multisig_wallet,  # This should be the multisig wallet address
+            self.multisig_wallet.get_address(),  # Get the address from the MultisigWallet object
             order.xrp_address,
             payout_amount
         )
