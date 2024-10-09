@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 
 # Configuration for orders
 ORDER_CONFIG = [
-    {"price": 100.0, "amount": 4.0, "order_type": "buy"},
-    {"price": 100.0, "amount": 3.0, "order_type": "sell"},
-    {"price": 99.0, "amount": 1.0, "order_type": "buy"},
-    {"price": 102.0, "amount": 2.0, "order_type": "sell"},
+    {"price": 100.0, "amount": 1.0, "order_type": "buy"},
+    {"price": 100.0, "amount": 1.0, "order_type": "sell"},
+    {"price": 99.0, "amount": 2.0, "order_type": "buy"},
+    {"price": 102.0, "amount": 3.0, "order_type": "sell"},
 ]
 
 def load_test_wallet():
