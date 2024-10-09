@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Order:
-    def __init__(self, price, amount, order_type, xrp_address, public_key, expiration=None, sequence=None, payment_tx_signature=None, multisig_destination=None, last_ledger_sequence=None):
+    def __init__(self, price, amount, order_type, xrp_address, public_key, expiration=None, sequence=None, payment_tx_signature=None, multisig_destination=None, last_ledger_sequence=None, signed_tx_json=None):
         self.price = price
         self.amount = int(amount)  # Convert to integer here
         self.order_type = order_type
@@ -16,6 +16,7 @@ class Order:
         self.payment_tx_signature = payment_tx_signature
         self.multisig_destination = multisig_destination
         self.last_ledger_sequence = last_ledger_sequence
+        self.signed_tx_json = signed_tx_json
 
 class OrderBook:
     def __init__(self):
