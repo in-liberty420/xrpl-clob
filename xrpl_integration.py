@@ -80,5 +80,6 @@ class XRPLIntegration:
         return submit_and_wait(signed_transaction, self.client)
 
     def get_current_ledger_sequence(self):
-        return self.client.request('ledger_current')['ledger_current_index']
+        response = self.client.request({"method": "ledger_current"})
+        return response['result']['ledger_current_index']
 
