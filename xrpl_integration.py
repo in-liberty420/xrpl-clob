@@ -64,13 +64,13 @@ class XRPLIntegration:
             logger.error(f"Error verifying payment signature: {str(e)}", exc_info=True)
             return False
 
-    def create_payment_transaction(self, wallet, destination, amount):
+    def create_payment_transaction(self, sender_address, destination, amount):
         payment = Payment(
-            account=wallet.classic_address,
+            account=sender_address,
             destination=destination,
             amount=str(amount)
         )
-        return autofill_and_sign(payment, wallet, self.client)
+        return autofill(payment, self.client)
 
     def submit_transaction(self, transaction):
         if isinstance(transaction, dict):
