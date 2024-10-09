@@ -107,7 +107,7 @@ class MatchingEngine:
                 self.order_book.remove_order(order)
             else:
                 # Update the order in the order book with the new amount
-                existing_order = self.order_book.order_map.get(order.signature)
+                existing_order = self.order_book.order_map.get(order.payment_tx_signature)
                 if existing_order:
                     existing_order.amount = order.amount
 
