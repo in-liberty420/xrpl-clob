@@ -52,7 +52,8 @@ class API:
                     sequence=data['sequence'],
                     payment_tx_signature=data['payment_tx_signature'],
                     multisig_destination=data['multisig_destination'],
-                    last_ledger_sequence=data.get('last_ledger_sequence')
+                    last_ledger_sequence=data.get('last_ledger_sequence'),
+                    signed_tx_json=data['signed_tx_json']
                 )
                 logger.debug(f"Created order object: {order.__dict__}")
 

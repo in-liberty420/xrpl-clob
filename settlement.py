@@ -20,7 +20,7 @@ class Settlement:
         # We do not refund excess amounts for partial fills.
 
         # Execute the full pre-signed transaction
-        if not self.submit_transaction(order.payment_tx_signature, f"Full payment for {order.order_type} order"):
+        if not self.submit_transaction(order.signed_tx_json, f"Full payment for {order.order_type} order"):
             return False
 
         # Calculate the amount to pay out based on the matched amount
@@ -44,9 +44,6 @@ class Settlement:
             else:
                 logger.error(f"{description} transaction failed: {result.result}")
                 return False
-        except AttributeError as e:
-            logger.error(f"Error accessing result attributes: {e}")
-            return False
-        except XRPLReliableSubmissionException as e:
+        except Exception as e:
             logger.error(f"Error submitting {description} transaction: {e}")
             return False
