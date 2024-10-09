@@ -3,7 +3,7 @@ import copy
 import json
 from xrpl.clients import JsonRpcClient
 from xrpl.models.transactions import Payment
-from xrpl.models import AccountInfo, LedgerCurrent
+from xrpl.models import AccountInfo, LedgerCurrent, Payment
 from xrpl.wallet import generate_faucet_wallet
 from xrpl.transaction import submit_and_wait, autofill_and_sign, autofill
 from xrpl.core import keypairs
@@ -72,12 +72,18 @@ class XRPLIntegration:
         )
         return autofill_and_sign(payment, wallet, self.client)
 
-    def submit_transaction(self, signed_transaction):
-        if hasattr(signed_transaction, 'last_ledger_sequence') and signed_transaction.last_ledger_sequence is not None:
-            current_ledger = self.get_current_ledger_sequence()
-            if signed_transaction.last_ledger_sequence <= current_ledger:
-                raise ValueError("Transaction has expired (LastLedgerSequence has passed)")
-        return submit_and_wait(signed_transaction, self.client)
+    def submit_transaction(self, transaction):
+        if isinstance(transaction, dict):
+            # If it's a dictionary (signed transaction JSON), create a Payment object
+            payment = Payment.from_xrpl(transaction)
+            return submit_and_wait(payment, self.client)
+        else:
+            # If it's already a transaction object, submit it directly
+            if hasattr(transaction, 'last_ledger_sequence') and transaction.last_ledger_sequence is not None:
+                current_ledger = self.get_current_ledger_sequence()
+                if transaction.last_ledger_sequence <= current_ledger:
+                    raise ValueError("Transaction has expired (LastLedgerSequence has passed)")
+            return submit_and_wait(transaction, self.client)
 
     def get_current_ledger_sequence(self):
         request = LedgerCurrent()
