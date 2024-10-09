@@ -16,6 +16,14 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# Configuration for orders
+ORDER_CONFIG = [
+    {"price": 100.0, "amount": 10.0, "order_type": "buy"},
+    {"price": 101.0, "amount": 5.0, "order_type": "sell"},
+    {"price": 99.0, "amount": 15.0, "order_type": "buy"},
+    {"price": 102.0, "amount": 8.0, "order_type": "sell"},
+]
+
 def load_test_wallet():
     with open("test_wallet.json", "r") as f:
         wallet_info = json.load(f)
@@ -24,45 +32,35 @@ def load_test_wallet():
 def get_multisig_address():
     with open("multisig_address.txt", "r") as f:
         return f.read().strip()
-
-async def place_order():
+        
+async def place_order(price, amount, order_type):
     url = "http://127.0.0.1:5000/place_order"
     
-    # Load the test wallet
     wallet = load_test_wallet()
     logger.debug(f"Loaded wallet with address: {wallet.classic_address}")
     
-    # Get the current sequence number
     client = AsyncJsonRpcClient("https://s.altnet.rippletest.net:51234")
     account_info = await client.request(AccountInfo(account=wallet.classic_address))
     current_sequence = account_info.result['account_data']['Sequence']
 
-    # Get the multisig wallet address
     multisig_destination = get_multisig_address()
     logger.debug(f"Multisig destination address: {multisig_destination}")
 
-    # Create order data
     order_data = {
-        "price": 100.0,
-        "amount": 10.0,
-        "order_type": "buy",
+        "price": price,
+        "amount": amount,
+        "order_type": order_type,
         "expiration": int(time.time()) + 300,  # Unix time, 5 minutes from now
-        "sequence": current_sequence + 1,  # Use the next sequence number
+        "sequence": current_sequence + 1,
         "multisig_destination": multisig_destination
     }
     logger.debug(f"Order data: {order_data}")
-    
-    # TODO: Implement order data signing later for additional security
-    # For now, we'll only sign the payment transaction
 
-    # Get the next valid sequence number and current fee
     sequence = await get_next_valid_seq_number(wallet.classic_address, client)
     fee = await get_fee(client)
 
-    # Convert the amount to drops
     amount_drops = xrpl.utils.xrp_to_drops(order_data['amount'])
 
-    # Create and sign the payment transaction
     payment = Payment(
         account=wallet.classic_address,
         amount=amount_drops,
@@ -71,17 +69,14 @@ async def place_order():
         fee=fee
     )
     
-    # Sign the transaction
     signed_payment = await autofill_and_sign(payment, client, wallet)
 
-    # Extract the relevant parts of the signed transaction
     signed_tx_json = signed_payment.to_xrpl()
     signature = signed_tx_json["TxnSignature"]
 
     logger.debug(f"Signed transaction JSON: {json.dumps(signed_tx_json, indent=2)}")
     logger.debug(f"Payment transaction signature: {signature}")
 
-    # Prepare payload
     payload = {
         **order_data,
         "xrp_address": wallet.classic_address,
@@ -90,12 +85,10 @@ async def place_order():
         "amount_drops": amount_drops,
         "signed_tx_json": signed_tx_json
     }
-    # TODO: Add order data signature to payload when implemented
     logger.debug(f"Payload: {payload}")
     
     headers = {"Content-Type": "application/json"}
 
-    # Send request using httpx
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload, headers=headers)
     
@@ -108,13 +101,16 @@ async def place_order():
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON response")
 
-    # Check the L2 order book
+async def main():
+    for order in ORDER_CONFIG:
+        await place_order(order["price"], order["amount"], order["order_type"])
+        await asyncio.sleep(1)  # Small delay between orders
+    
     l2_order_book_url = "http://127.0.0.1:5000/l2_order_book"
     async with httpx.AsyncClient() as client:
         l2_order_book_response = await client.get(l2_order_book_url)
-    logger.debug("\nL2 Order book:")
-    logger.debug(f"Status Code: {l2_order_book_response.status_code}")
-    logger.debug(f"Response Content: {l2_order_book_response.text}")
+    print("\nL2 Order book:")
+    print(l2_order_book_response.text)
 
 if __name__ == "__main__":
-    asyncio.run(place_order())
+    asyncio.run(main())
