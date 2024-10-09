@@ -4,3 +4,7 @@
 /venv1
 *.pyc
 encrypted_wallet.key
+test_wallet.json
+multisig_address.txt
+docs_for_llm.txt
+fund_multisig_wallet.py
