@@ -3,7 +3,7 @@ import copy
 import json
 from xrpl.clients import JsonRpcClient
 from xrpl.models.transactions import Payment
-from xrpl.models import AccountInfo
+from xrpl.models import AccountInfo, LedgerCurrent
 from xrpl.wallet import generate_faucet_wallet
 from xrpl.transaction import submit_and_wait, autofill_and_sign, autofill
 from xrpl.core import keypairs
@@ -80,6 +80,7 @@ class XRPLIntegration:
         return submit_and_wait(signed_transaction, self.client)
 
     def get_current_ledger_sequence(self):
-        response = self.client.request({"method": "ledger_current"})
-        return response['result']['ledger_current_index']
+        request = LedgerCurrent()
+        response = self.client.request(request)
+        return response.result['ledger_current_index']
 
