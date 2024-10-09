@@ -2,7 +2,7 @@ import json
 from xrpl.clients import JsonRpcClient
 from xrpl.wallet import generate_faucet_wallet
 from xrpl.models import Payment
-from xrpl.transaction import submit_and_wait, autofill_and_sign
+from xrpl.transaction import submit_and_wait, sign
 from xrpl.utils import xrp_to_drops
 from multisig import MultisigWallet
 
@@ -28,7 +28,7 @@ def fund_multisig_wallet():
     )
 
     # Sign and submit the transaction
-    signed_tx = autofill_and_sign(payment, faucet_wallet, client)
+    signed_tx = sign(payment, faucet_wallet)
     submit_result = submit_and_wait(signed_tx, client)
 
     if submit_result.is_successful():
