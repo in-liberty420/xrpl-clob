@@ -98,29 +98,8 @@ class MatchingEngine:
             print("Settlement failed. Invalidating this auction.")
             # You might want to implement some recovery logic here
 
-        # Clean expired orders
+        # Clean expired orders and remove 0 volume orders
         self.clean_order_book()
-
-    def update_order_book(self, matched_orders):
-        for order, filled_amount in matched_orders:
-            if order.amount == 0:
-                self.order_book.remove_order(order)
-            else:
-                # Update the order in the order book with the new amount
-                existing_order = self.order_book.order_map.get(order.payment_tx_signature)
-                if existing_order:
-                    existing_order.amount = order.amount
-
-    def remove_filled_orders(self):
-        for price in list(self.order_book.bids.keys()):
-            self.order_book.bids[price] = [order for order in self.order_book.bids[price] if order.amount > 0]
-            if not self.order_book.bids[price]:
-                del self.order_book.bids[price]
-        
-        for price in list(self.order_book.asks.keys()):
-            self.order_book.asks[price] = [order for order in self.order_book.asks[price] if order.amount > 0]
-            if not self.order_book.asks[price]:
-                del self.order_book.asks[price]
 
     def pro_rata_match(self, orders, clearing_price, max_volume, total_eligible_volume, price_condition):
         eligible_orders = [order for price, order_list in orders.items() if price_condition(price) for order in order_list]
@@ -139,14 +118,15 @@ class MatchingEngine:
     def clean_order_book(self):
         current_time = int(time.time())
         for price in list(self.order_book.bids.keys()):
-            self.order_book.bids[price] = [order for order in self.order_book.bids[price] if order.expiration > current_time]
+            for order in self.order_book.bids[price]:
+                if order.expiration <= current_time or order.amount == 0:
+                    self.order_book.remove_order(order)
             if not self.order_book.bids[price]:
                 del self.order_book.bids[price]
         
         for price in list(self.order_book.asks.keys()):
-            self.order_book.asks[price] = [order for order in self.order_book.asks[price] if order.expiration > current_time]
+            for order in self.order_book.asks[price]:
+                if order.expiration <= current_time or order.amount == 0:
+                    self.order_book.remove_order(order)
             if not self.order_book.asks[price]:
                 del self.order_book.asks[price]
-        
-        # Clean up the order_map
-        self.order_book.order_map = {sig: order for sig, order in self.order_book.order_map.items() if order.expiration > current_time}
