@@ -92,7 +92,7 @@ class API:
         def run_matching_engine():
             current_time = time.time()
             if current_time - self.last_matching_time >= self.matching_engine.batch_interval:
-                self.matching_engine.run_batch_auction()
+                self.matching_engine.run_batch_auction()  # Runs every 15 seconds
                 self.last_matching_time = current_time
 
         @self.app.before_request
