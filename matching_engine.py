@@ -1,6 +1,9 @@
 import time
+import logging
 from collections import defaultdict
 from settlement import Settlement
+
+logger = logging.getLogger(__name__)
 
 class MatchingEngine:
     def __init__(self, order_book, xrpl_integration, multisig_wallet, batch_interval=5):  # 5 seconds batch interval
@@ -14,10 +17,12 @@ class MatchingEngine:
     def run_batch_auction(self):
         current_time = int(time.time())
         if current_time - self.last_batch_time >= self.batch_interval:
+            logger.info(f"Running batch auction at {current_time}")
             self.match_orders()
             self.last_batch_time = current_time
 
     def match_orders(self):
+        logger.info("Starting order matching process")
         # Clean expired orders before matching
         self.clean_order_book()
 
@@ -29,8 +34,11 @@ class MatchingEngine:
         clearing_price, max_volume = self.find_clearing_price(demand, supply)
 
         if clearing_price is not None:
+            logger.info(f"Clearing price found: {clearing_price}, Max volume: {max_volume}")
             # Execute trades using pro-rata matching
             self.execute_trades(clearing_price, max_volume, demand, supply)
+        else:
+            logger.info("No matching orders found in this batch")
 
     def find_clearing_price(self, demand, supply):
         all_prices = sorted(set(demand.keys()) | set(supply.keys()))

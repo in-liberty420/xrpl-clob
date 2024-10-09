@@ -1,10 +1,14 @@
 import os
 import asyncio
+import logging
 from order_book import OrderBook
 from matching_engine import MatchingEngine
 from api import API
 from xrpl_integration import XRPLIntegration
 from multisig import MultisigWallet
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 async def run_matching_engine(matching_engine):
     while True:
