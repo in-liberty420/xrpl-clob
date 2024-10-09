@@ -87,5 +87,5 @@ class API:
             logger.debug(f"Current L2 order book: {book}")
             return jsonify(book)
 
-    def run(self):
-        self.app.run(debug=True)
+    async def run(self):
+        return await self.app.run_task(debug=True)

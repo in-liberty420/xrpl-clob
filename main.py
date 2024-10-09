@@ -44,11 +44,12 @@ async def main():
     matching_engine = MatchingEngine(order_book, xrpl_integration, multisig_wallet)
     api = API(order_book, matching_engine, xrpl_integration)
     
-    # Start the matching engine in a separate task
-    asyncio.create_task(run_matching_engine(matching_engine))
+    # Create tasks for both the matching engine and the API
+    matching_engine_task = asyncio.create_task(run_matching_engine(matching_engine))
+    api_task = asyncio.create_task(api.run())
     
-    # Start the API server
-    await api.run()
+    # Wait for both tasks to complete (which they never will in this case)
+    await asyncio.gather(matching_engine_task, api_task)
 
 if __name__ == "__main__":
     asyncio.run(main())
