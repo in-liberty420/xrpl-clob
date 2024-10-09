@@ -2,8 +2,9 @@ import json
 from xrpl.clients import JsonRpcClient
 from xrpl.wallet import generate_faucet_wallet
 from xrpl.models import Payment
-from xrpl.transaction import submit_and_wait, sign
+from xrpl.transaction import submit_and_wait, sign, autofill
 from xrpl.utils import xrp_to_drops
+from xrpl.ledger import get_latest_validated_ledger_sequence
 from multisig import MultisigWallet
 
 def fund_multisig_wallet():
@@ -26,6 +27,11 @@ def fund_multisig_wallet():
         amount=xrp_to_drops(1000),  # Send 1000 XRP
         destination=multisig_address
     )
+
+    # Autofill the transaction with the last_ledger_sequence
+    latest_ledger = get_latest_validated_ledger_sequence(client)
+    payment = autofill(payment, client, signers_count=1)
+    payment.last_ledger_sequence = latest_ledger + 20  # Give 20 ledgers of buffer
 
     # Sign and submit the transaction
     signed_tx = sign(payment, faucet_wallet)
