@@ -10,10 +10,16 @@ from multisig import MultisigWallet
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+import asyncio
+import threading
+
 async def run_matching_engine(matching_engine):
     while True:
         matching_engine.run_batch_auction()
         await asyncio.sleep(5)  # Wait for 5 seconds before the next auction
+
+def run_api(api):
+    api.run()
 
 async def main():
     order_book = OrderBook()
@@ -44,12 +50,12 @@ async def main():
     matching_engine = MatchingEngine(order_book, xrpl_integration, multisig_wallet)
     api = API(order_book, matching_engine, xrpl_integration)
     
-    # Create tasks for both the matching engine and the API
-    matching_engine_task = asyncio.create_task(run_matching_engine(matching_engine))
-    api_task = asyncio.create_task(api.run())
-    
-    # Wait for both tasks to complete (which they never will in this case)
-    await asyncio.gather(matching_engine_task, api_task)
+    # Start the API in a separate thread
+    api_thread = threading.Thread(target=run_api, args=(api,))
+    api_thread.start()
+
+    # Run the matching engine in the main asyncio event loop
+    await run_matching_engine(matching_engine)
 
 if __name__ == "__main__":
     asyncio.run(main())
