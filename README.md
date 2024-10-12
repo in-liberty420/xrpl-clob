@@ -103,6 +103,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgements
 - XRP Ledger Foundation for their excellent documentation and support
 - The open-source community for various libraries and tools used in this project
-
-## Contact
-For any queries or support, please open an issue in this repository or contact the maintainers at [your-email@example.com](mailto:your-email@example.com).
