@@ -60,7 +60,6 @@ This DEX interacts with the XRP Ledger Testnet in the following ways:
 For more details on XRPL integration, see the [XRPL Integration Guide](docs/XRPL_Integration.md).
 
 ## Architecture
-![Architecture Diagram](docs/images/architecture.png)
 
 Our DEX consists of the following main components:
 1. Order Book
